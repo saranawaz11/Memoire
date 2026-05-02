@@ -1,128 +1,63 @@
-from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder
-
+from database import conn
+from fastapi import FastAPI, HTTPException
+from datetime import datetime
 
 app = FastAPI()
 
 class Note(BaseModel):
-    id: int
     title: str
     content: str
-    tags: list[str]
-    updatedAt: str
-    wordCount: int
+    tags: list[str] = []
 
-notes = [
-  {
-    "id": 1,
-    "title": "Introduction to React",
-    "content": "React is a JavaScript library used for building user interfaces, especially single-page applications.",
-    "tags": ["react", "javascript", "frontend"],
-    "updatedAt": "2026-05-01T10:00:00Z",
-    "wordCount": 18
-  },
-  {
-    "id": 2,
-    "title": "Node.js Basics",
-    "content": "Node.js allows JavaScript to run on the server side using an event-driven, non-blocking I/O model.",
-    "tags": ["nodejs", "backend", "javascript"],
-    "updatedAt": "2026-05-01T10:05:00Z",
-    "wordCount": 20
-  },
-  {
-    "id": 3,
-    "title": "MongoDB Overview",
-    "content": "MongoDB is a NoSQL database that stores data in flexible JSON-like documents.",
-    "tags": ["mongodb", "database", "nosql"],
-    "updatedAt": "2026-05-01T10:10:00Z",
-    "wordCount": 15
-  },
-  {
-    "id": 4,
-    "title": "Express.js Routing",
-    "content": "Express provides a robust set of features to build web applications and APIs with routing support.",
-    "tags": ["express", "backend", "api"],
-    "updatedAt": "2026-05-01T10:15:00Z",
-    "wordCount": 18
-  },
-  {
-    "id": 5,
-    "title": "TypeScript Benefits",
-    "content": "TypeScript adds static typing to JavaScript, improving code quality and maintainability.",
-    "tags": ["typescript", "javascript"],
-    "updatedAt": "2026-05-01T10:20:00Z",
-    "wordCount": 14
-  },
-  {
-    "id": 6,
-    "title": "Next.js Features",
-    "content": "Next.js enables server-side rendering and static site generation for React applications.",
-    "tags": ["nextjs", "react", "framework"],
-    "updatedAt": "2026-05-01T10:25:00Z",
-    "wordCount": 14
-  },
-  {
-    "id": 7,
-    "title": "REST API Principles",
-    "content": "REST APIs use HTTP methods like GET, POST, PUT, and DELETE to manage resources.",
-    "tags": ["api", "rest", "backend"],
-    "updatedAt": "2026-05-01T10:30:00Z",
-    "wordCount": 18
-  },
-  {
-    "id": 8,
-    "title": "Git Basics",
-    "content": "Git is a distributed version control system used to track changes in source code.",
-    "tags": ["git", "version-control"],
-    "updatedAt": "2026-05-01T10:35:00Z",
-    "wordCount": 17
-  },
-  {
-    "id": 9,
-    "title": "CSS Flexbox",
-    "content": "Flexbox is a layout model that allows elements to align and distribute space within a container.",
-    "tags": ["css", "flexbox", "frontend"],
-    "updatedAt": "2026-05-01T10:40:00Z",
-    "wordCount": 18
-  },
-  {
-    "id": 10,
-    "title": "Authentication Basics",
-    "content": "Authentication verifies user identity using methods like JWT, sessions, or OAuth.",
-    "tags": ["auth", "security", "backend"],
-    "updatedAt": "2026-05-01T10:45:00Z",
-    "wordCount": 14
-  }
-]
-
-# print(notes)
 
 @app.get("/")
 async def root():
-    return notes
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM notes ORDER BY updatedAt DESC")
+        notes = cur.fetchall()
+    return {"notes": notes}
+
 
 @app.get("/note/{note_id}")
 async def get_note_by_id(note_id: int):
-    for note in notes:
-        if note["id"] == note_id:
-            return note
-    return {"message": "Note not found"}
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM notes WHERE id = %s", (note_id,))
+        note = cur.fetchone()
+    print("note:", note)
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return {"note": note}
 
 
-@app.post("/note", response_model=Note)
+@app.post("/note")
 async def create_note(note: Note):
-    notes.append(note)
-    return {"message": "Note created successfully", "note": note}
+    word_count = len(note.content.split())
+    with conn.cursor() as cur:
+       cur.execute(
+    '''INSERT INTO notes (title, content, tags, updatedat, wordcount) 
+       VALUES (%s, %s, %s, %s, %s)''',
+    (note.title, note.content, note.tags, datetime.now(), word_count)
+    )
+    conn.commit()
+    return {"message": "Note created successfully"}
 
 
-@app.put("/note/{note_id}", response_model=Note)
+@app.put("/note/{note_id}")
 async def update_note(note_id: int, note: Note):
-    update_note_encoded = jsonable_encoder(note)
-    notes[note_id] = update_note_encoded
-    return {"message": "Note updated successfully", "note": update_note_encoded}
+    word_count = len(note.content.split())
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE notes SET title=%s, content=%s, tags=%s, updatedat=%s, wordcount=%s WHERE id=%s",
+            (note.title, note.content, note.tags, datetime.now(), word_count, note_id)
+        )
+        conn.commit()
+    return {"message": "Note updated successfully"}
 
 @app.delete("/note/{note_id}")
 async def delete_note(note_id: int):
-    del notes[note_id]
-    return {"message": "Note deleted successfully", "note": notes[note_id]}
+    with conn.cursor() as cur:
+        cur.execute("DELETE FROM notes WHERE id = %s", (note_id,))
+        conn.commit()
+    return {"message": "Note deleted successfully"}

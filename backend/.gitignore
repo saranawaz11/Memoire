@@ -12,6 +12,10 @@ env/
 # VS Code settings (optional)
 .vscode/
 
+# Node modules
+npm_modules/
+npm-global/
+
 # OS files
 .DS_Store
 Thumbs.db
