@@ -14,7 +14,6 @@ try:
     conn = psycopg2.connect(conn_string)
     print("Connection established")
 
-        # Open a cursor to perform database operations
     with conn.cursor() as cur:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS notes (
@@ -26,7 +25,6 @@ try:
                 wordCount INT DEFAULT 0
             );
         """)
-        # Sync the sequence with the highest existing id
         cur.execute("SELECT setval('notes_id_seq', COALESCE((SELECT MAX(id) FROM notes), 0) + 1, false);")
         conn.commit()
         print("Finished creating table.")

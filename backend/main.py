@@ -3,8 +3,16 @@ from fastapi.encoders import jsonable_encoder
 from database import conn
 from fastapi import FastAPI, HTTPException
 from datetime import datetime
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class Note(BaseModel):
     title: str
@@ -16,7 +24,11 @@ class Note(BaseModel):
 async def root():
     with conn.cursor() as cur:
         cur.execute("SELECT * FROM notes ORDER BY updatedAt DESC")
-        notes = cur.fetchall()
+        rows = cur.fetchall()
+    notes = [
+        {"id": r[0], "title": r[1], "content": r[2], "tags": r[3], "updatedAt": str(r[4]), "wordCount": r[5]}
+        for r in rows
+    ]
     return {"notes": notes}
 
 
