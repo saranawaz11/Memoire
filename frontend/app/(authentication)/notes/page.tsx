@@ -1,3 +1,6 @@
+
+'use client'
+
 import {
   Card,
   CardContent,
@@ -5,20 +8,21 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Note } from '@/types/note';
 import { Pencil, Trash2 } from 'lucide-react'
-import React from 'react'
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react'
 
 export default function Page() {
-  const notes = [...Array(4)].map((_, i) => ({
-    id: i,
-    title: 'This is a note title',
-    date: 'May 6, 2026',
-    readTime: '3 min read',
-    words: 214,
-    content:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam vitae, dolor ratione veritatis eius pariatur! Eos hic asperiores eligendi neque nulla iusto error dolor ut autem culpa.',
-    tags: ['react', 'nextjs', 'ui'],
-  }))
+  const [notes, setNotes] = useState<Note[]>([])
+  const router = useRouter()
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/")
+      .then((response) => response.json())
+      .then((data) => setNotes(data.notes))
+      .catch((error) => console.error("Error fetching users:", error));
+  }, []);
 
   return (
     <div>
@@ -32,6 +36,7 @@ export default function Page() {
             <Card
               key={note.id}
               className="bg-green-50 border border-green-100 rounded-xl py-4 flex flex-col justify-between hover:shadow-md transition"
+              onClick={() => router.push(`/notes/${note.id}`)}
             >
               <CardHeader className="px-4 mb-3">
                 <CardTitle className="text-lg font-semibold text-green-900">
@@ -49,13 +54,13 @@ export default function Page() {
 
                 <div className="flex flex-wrap gap-2 text-xs text-green-700 mt-2">
                   <span className="bg-green-100 px-2 py-0.5 rounded-md">
-                    {note.date}
+                    {note.updatedAt}
                   </span>
                   <span className="bg-green-100 px-2 py-0.5 rounded-md">
-                    {note.readTime}
+                    15m
                   </span>
                   <span className="bg-green-100 px-2 py-0.5 rounded-md">
-                    {note.words} words
+                    {note.wordCount} words
                   </span>
                 </div>
               </CardHeader>

@@ -36,10 +36,10 @@ async def root():
 async def get_note_by_id(note_id: int):
     with conn.cursor() as cur:
         cur.execute("SELECT * FROM notes WHERE id = %s", (note_id,))
-        note = cur.fetchone()
-    print("note:", note)
-    if not note:
+        r = cur.fetchone()
+    if not r:
         raise HTTPException(status_code=404, detail="Note not found")
+    note = {"id": r[0], "title": r[1], "content": r[2], "tags": r[3], "updatedAt": str(r[4]), "wordCount": r[5]}
     return {"note": note}
 
 
