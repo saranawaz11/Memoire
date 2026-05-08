@@ -47,13 +47,14 @@ async def get_note_by_id(note_id: int):
 async def create_note(note: Note):
     word_count = len(note.content.split())
     with conn.cursor() as cur:
-       cur.execute(
-    '''INSERT INTO notes (title, content, tags, updatedat, wordcount) 
-       VALUES (%s, %s, %s, %s, %s)''',
-    (note.title, note.content, note.tags, datetime.now(), word_count)
-    )
-    conn.commit()
-    return {"message": "Note created successfully"}
+        cur.execute(
+            '''INSERT INTO notes (title, content, tags, updatedat, wordcount) 
+               VALUES (%s, %s, %s, %s, %s) RETURNING id''',
+            (note.title, note.content, note.tags, datetime.now(), word_count)
+        )
+        new_id = cur.fetchone()[0]
+        conn.commit()
+    return {"message": "Note created successfully", "id": new_id}
 
 
 @app.put("/note/{note_id}")

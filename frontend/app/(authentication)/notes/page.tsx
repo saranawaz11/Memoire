@@ -1,95 +1,120 @@
-
 'use client'
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Note } from '@/types/note';
-import { Pencil, Trash2 } from 'lucide-react'
-import { useRouter } from 'next/navigation';
+import { Note } from '@/types/note'
+import { Pencil, Trash2, Hash } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
+import DeleteButton from '../components/Deletebutton'
 
 export default function Page() {
   const [notes, setNotes] = useState<Note[]>([])
   const router = useRouter()
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/")
-      .then((response) => response.json())
+    fetch('http://127.0.0.1:8000/')
+      .then((r) => r.json())
       .then((data) => setNotes(data.notes))
-      .catch((error) => console.error("Error fetching users:", error));
-  }, []);
+      .catch((e) => console.error(e))
+  }, [])
+
+  // const handleDelete = async (e: React.MouseEvent, id: number) => {
+  //   e.stopPropagation()
+  //   await fetch(`http://127.0.0.1:8000/note/${id}`, { method: 'DELETE' })
+  //   setNotes((prev) => prev.filter((n) => n.id !== id))
+  // }
 
   return (
-    <div>
-      <div className="max-w-7xl mx-auto p-10">
-        <h2 className="text-3xl font-semibold mt-10 text-green-900">
-          All Notes
-        </h2>
+    <div className="min-h-screen bg-[#f7f5f0]">
+      <div className="max-w-6xl mx-auto px-8 py-12">
 
-        <div className="mt-9 grid grid-cols-3 gap-8">
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <p className="text-xs font-medium tracking-widest text-green-600 uppercase mb-1">
+              Your workspace
+            </p>
+            <h1 className="text-4xl font-bold text-stone-800 tracking-tight">
+              Notes
+            </h1>
+          </div>
+          <button
+            onClick={() => router.push('/notes/form')}
+            className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <span className="text-lg leading-none">+</span> New note
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {notes.map((note) => (
-            <Card
+            <div
               key={note.id}
-              className="bg-green-50 border border-green-100 rounded-xl py-4 flex flex-col justify-between hover:shadow-md transition"
               onClick={() => router.push(`/notes/${note.id}`)}
+              className="group relative bg-white rounded-2xl p-5 flex flex-col gap-3 cursor-pointer hover:border-green-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-all duration-200"
             >
-              <CardHeader className="px-4 mb-3">
-                <CardTitle className="text-lg font-semibold text-green-900">
-                  {note.title}
-                </CardTitle>
+              <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => { e.stopPropagation(); router.push(`/notes/form?id=${note.id}`) }}
+                  className="p-1.5 rounded-lg hover:bg-green-50 text-stone-400 hover:text-green-700 transition-colors"
+                >
+                  <Pencil size={14} />
+                </button>
 
-                <div className="flex gap-2 justify-end">
-                    <button className="p-1 rounded-md hover:bg-green-100 text-green-700">
-                      <Pencil size={16} />
-                    </button>
-                    <button className="p-1 rounded-md hover:bg-red-100 text-red-600">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-
-                <div className="flex flex-wrap gap-2 text-xs text-green-700 mt-2">
-                  <span className="bg-green-100 px-2 py-0.5 rounded-md">
-                    {note.updatedAt}
-                  </span>
-                  <span className="bg-green-100 px-2 py-0.5 rounded-md">
-                    15m
-                  </span>
-                  <span className="bg-green-100 px-2 py-0.5 rounded-md">
-                    {note.wordCount} words
-                  </span>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DeleteButton
+                    id={note.id}
+                    endpoint="note"
+                    onSuccess={() => setNotes((prev) => prev.filter((n) => n.id !== note.id))}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors"
+                  />
                 </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="p-0 mb-4">
-                <p className="text-sm text-green-800 line-clamp-3 px-4">
+              <h3 className="text-base font-semibold text-stone-800 leading-snug pr-14">
+                {note.title}
+              </h3>
+
+              {note.content && (
+                <p className="text-sm text-stone-500 leading-relaxed line-clamp-3">
                   {note.content}
                 </p>
-              </CardContent>
+              )}
 
-              <CardFooter className="py-1 flex flex-wrap gap-2 bg-green-50">
-                {note.tags.map((tag, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-1 border px-2 py-1 rounded-md text-xs text-gray-500"
-                  >
-                    <span className=''>{tag}</span>
-                    <button className=" hover:text-red-900 text-xs scale-100">
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                <div>
-
+              {note.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {note.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5 rounded-md"
+                    >
+                      <Hash size={10} />
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-              </CardFooter>
-            </Card>
+              )}
+
+              <div className="flex items-center gap-2 mt-auto pt-2 border-t border-stone-100">
+                <span className="text-xs text-stone-400">
+                  {new Date(note.updatedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: '2-digit',
+                  })}
+                </span>
+                <span className="text-stone-200">·</span>
+                <span className="text-xs text-stone-400">{note.wordCount} words</span>
+              </div>
+            </div>
           ))}
         </div>
+
+        {notes.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center mb-4">
+              <span className="text-2xl">📝</span>
+            </div>
+            <p className="text-stone-500 text-sm">No notes yet. Create your first one.</p>
+          </div>
+        )}
       </div>
     </div>
   )
