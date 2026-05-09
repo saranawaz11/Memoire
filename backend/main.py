@@ -1,11 +1,15 @@
-from pydantic import BaseModel
-from fastapi.encoders import jsonable_encoder
-from database import conn
-from fastapi import FastAPI, HTTPException
-from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
-app = FastAPI()
+import crud
+import models
+from database import engine, get_db
+from schemas import MeResponse, NoteCreate, NoteUpdate, NoteResponse
+
+models.Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Notes App")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -14,63 +18,67 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class Note(BaseModel):
-    title: str
-    content: str
-    tags: list[str] = []
+
+# ---------------------------------------------------------------------------
+# Auth — Clerk passes user ID from frontend via header
+# ---------------------------------------------------------------------------
+
+def get_current_user_id(x_user_id: str = Header(...)) -> str:
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return x_user_id
 
 
-@app.get("/")
-async def root():
-    with conn.cursor() as cur:
-        cur.execute("SELECT * FROM notes ORDER BY updatedAt DESC")
-        rows = cur.fetchall()
-    notes = [
-        {"id": r[0], "title": r[1], "content": r[2], "tags": r[3], "updatedAt": str(r[4]), "wordCount": r[5]}
-        for r in rows
-    ]
-    return {"notes": notes}
+def get_db_user(
+    db: Session = Depends(get_db),
+    clerk_user_id: str = Depends(get_current_user_id),
+) -> models.AppUser:
+    return crud.get_or_create_app_user(db, clerk_user_id)
 
 
-@app.get("/note/{note_id}")
-async def get_note_by_id(note_id: int):
-    with conn.cursor() as cur:
-        cur.execute("SELECT * FROM notes WHERE id = %s", (note_id,))
-        r = cur.fetchone()
-    if not r:
+# ---------------------------------------------------------------------------
+# Profile
+# ---------------------------------------------------------------------------
+
+
+@app.get("/me", response_model=MeResponse, response_model_by_alias=True)
+def read_me(user: models.AppUser = Depends(get_db_user)):
+    return MeResponse(user_id=user.clerk_user_id, role=user.role)
+
+
+# ---------------------------------------------------------------------------
+# Note Routes
+# ---------------------------------------------------------------------------
+
+@app.post("/notes/", response_model=NoteResponse, response_model_by_alias=True, status_code=201)
+def create_note(data: NoteCreate, db: Session = Depends(get_db), user: models.AppUser = Depends(get_db_user)):
+    return crud.create_note(db, data, user.clerk_user_id)
+
+
+@app.get("/notes/", response_model=list[NoteResponse], response_model_by_alias=True)
+def list_notes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), user: models.AppUser = Depends(get_db_user)):
+    return crud.get_notes_by_user(db, user.clerk_user_id, skip=skip, limit=limit)
+
+
+@app.get("/notes/{note_id}", response_model=NoteResponse, response_model_by_alias=True)
+def get_note(note_id: int, db: Session = Depends(get_db), user: models.AppUser = Depends(get_db_user)):
+    note = crud.get_note(db, note_id)
+    if not note or note.user_id != user.clerk_user_id:
         raise HTTPException(status_code=404, detail="Note not found")
-    note = {"id": r[0], "title": r[1], "content": r[2], "tags": r[3], "updatedAt": str(r[4]), "wordCount": r[5]}
-    return {"note": note}
+    return note
 
 
-@app.post("/note")
-async def create_note(note: Note):
-    word_count = len(note.content.split())
-    with conn.cursor() as cur:
-        cur.execute(
-            '''INSERT INTO notes (title, content, tags, updatedat, wordcount) 
-               VALUES (%s, %s, %s, %s, %s) RETURNING id''',
-            (note.title, note.content, note.tags, datetime.now(), word_count)
-        )
-        new_id = cur.fetchone()[0]
-        conn.commit()
-    return {"message": "Note created successfully", "id": new_id}
+@app.patch("/notes/{note_id}", response_model=NoteResponse, response_model_by_alias=True)
+def update_note(note_id: int, data: NoteUpdate, db: Session = Depends(get_db), user: models.AppUser = Depends(get_db_user)):
+    note = crud.get_note(db, note_id)
+    if not note or note.user_id != user.clerk_user_id:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return crud.update_note(db, note_id, data)
 
 
-@app.put("/note/{note_id}")
-async def update_note(note_id: int, note: Note):
-    word_count = len(note.content.split())
-    with conn.cursor() as cur:
-        cur.execute(
-            "UPDATE notes SET title=%s, content=%s, tags=%s, updatedat=%s, wordcount=%s WHERE id=%s",
-            (note.title, note.content, note.tags, datetime.now(), word_count, note_id)
-        )
-        conn.commit()
-    return {"message": "Note updated successfully"}
-
-@app.delete("/note/{note_id}")
-async def delete_note(note_id: int):
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM notes WHERE id = %s", (note_id,))
-        conn.commit()
-    return {"message": "Note deleted successfully"}
+@app.delete("/notes/{note_id}", status_code=204)
+def delete_note(note_id: int, db: Session = Depends(get_db), user: models.AppUser = Depends(get_db_user)):
+    note = crud.get_note(db, note_id)
+    if not note or note.user_id != user.clerk_user_id:
+        raise HTTPException(status_code=404, detail="Note not found")
+    crud.delete_note(db, note_id)

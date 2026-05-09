@@ -1,34 +1,26 @@
 import os
 
-import psycopg2
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Get the connection string from the environment variable
-conn_string = os.getenv("DATABASE_URL")
-conn = None
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set in the .env file")
 
-try:
-    conn = psycopg2.connect(conn_string)
-    print("Connection established")
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS notes (
-                id SERIAL PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                content TEXT NOT NULL,
-                tags TEXT[] DEFAULT '{}',
-                updatedAt TIMESTAMP DEFAULT NOW(),
-                wordCount INT DEFAULT 0
-            );
-        """)
-        cur.execute("SELECT setval('notes_id_seq', COALESCE((SELECT MAX(id) FROM notes), 0) + 1, false);")
-        conn.commit()
-        print("Finished creating table.")
 
-except Exception as e:
-    print("Connection failed.")
-    print(e)
+class Base(DeclarativeBase):
+    pass
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

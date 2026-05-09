@@ -2,6 +2,7 @@
 
 import { Note } from '@/types/note'
 import { ArrowLeft, Hash, Plus, X } from 'lucide-react'
+import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -16,6 +17,7 @@ type NoteFormValues = {
 export default function NoteForm({ note }: { note?: Note }) {
     const isEditing = !!note
     const router = useRouter()
+    const { userId } = useAuth()
     const [tagInput, setTagInput] = useState('')
 
     const {
@@ -47,25 +49,37 @@ export default function NoteForm({ note }: { note?: Note }) {
     }
 
     const onSubmit = async (values: NoteFormValues) => {
+        if (!userId) {
+            toast.error('You must be signed in')
+            return
+        }
+
         const url = isEditing
-            ? `http://127.0.0.1:8000/note/${note!.id}`
-            : `http://127.0.0.1:8000/note`
+            ? `http://127.0.0.1:8000/notes/${note!.id}`
+            : `http://127.0.0.1:8000/notes/`
 
-        const res = await fetch(url, {
-            method: isEditing ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(values),
-        })
+        try {
+            const res = await fetch(url, {
+                method: isEditing ? 'PATCH' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': userId,
+                },
+                body: JSON.stringify(values),
+            })
 
-        if (res.ok) {
-            const data = await res.json()
-            console.log('response data:', data)
-            const redirectId = isEditing ? note!.id : data!.id
-            toast.success(isEditing ? 'Note updated' : 'Note created')
-            router.push(`/notes/${redirectId}`)
-            router.refresh()
-        } else {
-            toast.error('Failed to save note')
+            if (res.ok) {
+                const data = await res.json()
+                const redirectId = isEditing ? note!.id : data.id
+                toast.success(isEditing ? 'Note updated' : 'Note created')
+                router.push(`/notes/${redirectId}`)
+                router.refresh()
+            } else {
+                toast.error('Failed to save note')
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error('Network error while saving note')
         }
     }
 

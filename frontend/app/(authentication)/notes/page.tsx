@@ -1,21 +1,47 @@
 'use client'
 
 import { Note } from '@/types/note'
-import { Pencil, Trash2, Hash } from 'lucide-react'
+import { Pencil, Hash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import DeleteButton from '../components/Deletebutton'
+import { useAuth, UserButton } from '@clerk/nextjs'
+
+type MeProfile = { userId: string; role: string }
 
 export default function Page() {
   const [notes, setNotes] = useState<Note[]>([])
+  const [profile, setProfile] = useState<MeProfile | null>(null)
   const router = useRouter()
+  const { userId } = useAuth()
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/')
-      .then((r) => r.json())
-      .then((data) => setNotes(data.notes))
-      .catch((e) => console.error(e))
-  }, [])
+    if (!userId) return
+
+    fetch('http://127.0.0.1:8000/me', {
+      headers: { 'x-user-id': userId },
+    })
+      .then(async (r) => (r.ok ? r.json() : null))
+      .then((data) => setProfile(data))
+      .catch(() => setProfile(null))
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) return
+
+    fetch('http://127.0.0.1:8000/notes/', {
+      headers: { 'x-user-id': userId },
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`Notes request failed: ${r.status}`)
+        return r.json() as Promise<Note[]>
+      })
+      .then((data) => setNotes(Array.isArray(data) ? data : []))
+      .catch((e) => {
+        console.error(e)
+        setNotes([])
+      })
+  }, [userId])
 
   // const handleDelete = async (e: React.MouseEvent, id: number) => {
   //   e.stopPropagation()
@@ -31,17 +57,26 @@ export default function Page() {
           <div>
             <p className="text-xs font-medium tracking-widest text-green-600 uppercase mb-1">
               Your workspace
+              {profile?.role && (
+                <span className="ml-2 normal-case text-stone-500 font-normal tracking-normal">
+                  · {profile.role}
+                </span>
+              )}
             </p>
             <h1 className="text-4xl font-bold text-stone-800 tracking-tight">
               Notes
             </h1>
           </div>
-          <button
-            onClick={() => router.push('/notes/form')}
-            className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-          >
-            <span className="text-lg leading-none">+</span> New note
-          </button>
+
+          <div className='flex gap-5'>
+            <button
+              onClick={() => router.push('/notes/form')}
+              className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              <span className="text-lg leading-none">+</span> New note
+            </button>
+            <UserButton afterSwitchSessionUrl='/' />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -49,7 +84,7 @@ export default function Page() {
             <div
               key={note.id}
               onClick={() => router.push(`/notes/${note.id}`)}
-              className="group relative bg-white rounded-2xl p-5 flex flex-col gap-3 cursor-pointer hover:border-green-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-all duration-200"
+              className="group relative bg-white rounded-2xl p-5 flex flex-col gap-3 cursor-pointer hover:border-green-300 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.09)] transition-all duration-200"
             >
               <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
@@ -62,7 +97,7 @@ export default function Page() {
                 <div onClick={(e) => e.stopPropagation()}>
                   <DeleteButton
                     id={note.id}
-                    endpoint="note"
+                    endpoint="notes"
                     onSuccess={() => setNotes((prev) => prev.filter((n) => n.id !== note.id))}
                     className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors"
                   />
@@ -79,9 +114,9 @@ export default function Page() {
                 </p>
               )}
 
-              {note.tags.length > 0 && (
+              {(note.tags?.length ?? 0) > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {note.tags.map((tag, i) => (
+                  {(note.tags ?? []).map((tag, i) => (
                     <span
                       key={i}
                       className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5 rounded-md"
@@ -95,13 +130,17 @@ export default function Page() {
 
               <div className="flex items-center gap-2 mt-auto pt-2 border-t border-stone-100">
                 <span className="text-xs text-stone-400">
-                  {new Date(note.updatedAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: '2-digit',
-                  })}
+                  {note.updatedAt
+                    ? new Date(note.updatedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: '2-digit',
+                      })
+                    : '—'}
                 </span>
                 <span className="text-stone-200">·</span>
-                <span className="text-xs text-stone-400">{note.wordCount} words</span>
+                <span className="text-xs text-stone-400">
+                  {typeof note.wordCount === 'number' ? `${note.wordCount} words` : '—'}
+                </span>
               </div>
             </div>
           ))}

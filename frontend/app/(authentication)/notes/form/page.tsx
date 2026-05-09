@@ -1,5 +1,6 @@
 import React from 'react'
 import NoteForm from './NoteForm'
+import { auth } from '@clerk/nextjs/server'
 
 export async function generateMetadata(
     {
@@ -7,8 +8,8 @@ export async function generateMetadata(
     }: {
         searchParams: Promise<{ [key: string]: string | undefined }>
     }) {
-    const { noteId } = await searchParams
-    if (!noteId) return { title: 'New Note' }
+    const { id } = await searchParams
+    if (!id) return { title: 'New Note' }
     return { title: 'Edit Note' }
 }
 
@@ -20,9 +21,21 @@ export default async function page(
     }
 ) {
     const { id } = await searchParams
+    const { userId } = await auth()
     try {
+        if (!userId) {
+            return (
+                <div>
+                    <h2>Unauthorized</h2>
+                </div>
+            )
+        }
+
         if (id) {
-            const res = await fetch(`http://127.0.0.1:8000/note/${id}`, { cache: 'no-store' })
+            const res = await fetch(`http://127.0.0.1:8000/notes/${id}`, {
+                cache: 'no-store',
+                headers: { 'x-user-id': userId },
+            })
 
             if (!res.ok) {
                 return (
@@ -31,8 +44,7 @@ export default async function page(
                     </div>
                 )
             }
-            const data = await res.json()
-            const note = data.note
+            const note = await res.json()
 
             return (
                 <NoteForm key={id} note={note} />

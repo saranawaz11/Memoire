@@ -1,6 +1,7 @@
-import { Hash, Pencil, Trash2, ArrowLeft, Clock, FileText } from 'lucide-react'
+import { Hash, Pencil, ArrowLeft, Clock, FileText } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { auth } from '@clerk/nextjs/server'
 import DeleteButton from '../../components/Deletebutton'
 
 export default async function Page({
@@ -9,22 +10,37 @@ export default async function Page({
     params: Promise<{ id: string }>
 }) {
     const { id } = await params
+    const { userId } = await auth()
 
-    const res = await fetch(`http://127.0.0.1:8000/note/${id}`)
+    if (!userId) notFound()
 
-    if (!res.ok) notFound()
+    const [noteRes, meRes] = await Promise.all([
+        fetch(`http://127.0.0.1:8000/notes/${id}`, {
+            headers: { 'x-user-id': userId },
+            cache: 'no-store',
+        }),
+        fetch(`http://127.0.0.1:8000/me`, {
+            headers: { 'x-user-id': userId },
+            cache: 'no-store',
+        }),
+    ])
 
-    const data = await res.json()
-    const note = data.note
+    if (!noteRes.ok) notFound()
 
-    const readingMinutes = Math.max(1, Math.ceil(note.wordCount / 200))
+    const note = await noteRes.json()
+    const me = meRes.ok ? await meRes.json() : null
 
-    const formattedDate = new Date(note.updatedAt).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    })
+    const wordCount = typeof note.wordCount === 'number' ? note.wordCount : 0
+    const readingMinutes = Math.max(1, Math.ceil(wordCount / 200))
+
+    const formattedDate = note.updatedAt
+        ? new Date(note.updatedAt).toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+          })
+        : ''
 
     return (
         <div className="min-h-screen bg-[#f7f5f0]">
@@ -39,15 +55,20 @@ export default async function Page({
                 </Link>
 
                 <div className="flex items-center gap-4 mb-6">
+                    {me?.role && (
+                        <span className="inline-flex items-center gap-1.5 bg-stone-100 text-stone-600 text-xs font-medium px-3 py-1.5 rounded-full">
+                            {me.role}
+                        </span>
+                    )}
                     <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full">
                         <Clock size={11} />
                         {readingMinutes} min read
                     </span>
                     <span className="inline-flex items-center gap-1.5 bg-stone-100 text-stone-500 text-xs font-medium px-3 py-1.5 rounded-full">
                         <FileText size={11} />
-                        {note.wordCount} words
+                        {wordCount} words
                     </span>
-                    <span className="text-xs text-stone-400 ml-auto">{formattedDate}</span>
+                    <span className="text-xs text-stone-400 ml-auto">{formattedDate || '—'}</span>
                 </div>
 
                 <h1 className="text-3xl font-bold text-stone-800 tracking-tight leading-tight mb-4">
@@ -96,7 +117,7 @@ export default async function Page({
 
                         <DeleteButton
                             id={note.id}
-                            endpoint="note"
+                            endpoint="notes"
                             redirectTo="/notes"
                             className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors"
                         />

@@ -1,6 +1,7 @@
 'use client'
 
 import { Trash2 } from 'lucide-react'
+import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ConfirmModal } from './modals/ConfirmModal'
@@ -15,20 +16,34 @@ type Props = {
 
 export default function DeleteButton({ id, endpoint, redirectTo = '/notes', onSuccess, className }: Props) {
     const router = useRouter()
+    const { userId } = useAuth()
 
     const handleDelete = async () => {
-        const res = await fetch(`http://127.0.0.1:8000/${endpoint}/${id}`, { method: 'DELETE' })
+        if (!userId) {
+            toast.error('You must be signed in')
+            return
+        }
 
-        if (res.ok) {
-            toast.success('Note deleted')
-            if (onSuccess) {
-                onSuccess()
+        try {
+            const res = await fetch(`http://127.0.0.1:8000/${endpoint}/${id}`, {
+                method: 'DELETE',
+                headers: { 'x-user-id': userId },
+            })
+
+            if (res.ok) {
+                toast.success('Note deleted')
+                if (onSuccess) {
+                    onSuccess()
+                } else {
+                    router.push(redirectTo)
+                    router.refresh()
+                }
             } else {
-                router.push(redirectTo)
-                router.refresh()
+                toast.error('Failed to delete note')
             }
-        } else {
-            toast.error('Failed to delete note')
+        } catch (error) {
+            console.error(error)
+            toast.error('Network error while deleting note')
         }
     }
 
