@@ -34,5 +34,18 @@ class NoteResponse(BaseModel):
 class MeResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    user_id: str = Field(serialization_alias="userId")
+    user_id:    str        = Field(serialization_alias="userId")
+    role:       str
+    first_name: str | None = Field(None, serialization_alias="firstName")
+    last_name:  str | None = Field(None, serialization_alias="lastName")
+    email:      str | None = None
+
+
+class UserListResponse(BaseModel):
+    clerk_user_id: str
     role: str
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    note_count: int
+    joined_at: datetime | None = None

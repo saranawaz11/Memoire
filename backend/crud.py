@@ -7,7 +7,7 @@ def get_or_create_app_user(db: Session, clerk_user_id: str) -> AppUser:
     user = db.query(AppUser).filter(AppUser.clerk_user_id == clerk_user_id).first()
     if user:
         return user
-    user = AppUser(clerk_user_id=clerk_user_id, role="customer")
+    user = AppUser(clerk_user_id=clerk_user_id, role="user")
     db.add(user)
     db.commit()
     db.refresh(user)

@@ -1,11 +1,12 @@
 'use client'
 
 import { Note } from '@/types/note'
-import { Pencil, Hash } from 'lucide-react'
+import { Pencil, Hash, UserRoundX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import DeleteButton from '../components/Deletebutton'
 import { useAuth, UserButton } from '@clerk/nextjs'
+import Link from 'next/link'
 
 type MeProfile = { userId: string; role: string }
 
@@ -63,6 +64,12 @@ export default function Page() {
                 </span>
               )}
             </p>
+
+            {
+              profile?.role === 'manager' ? (
+                <Link href={'/manager'} className='my-2 text-sm text-stone-500 capitalize hover:underline hover:text-stone-800'>go to manager workspace</Link>
+              ) : null
+            }
             <h1 className="text-4xl font-bold text-stone-800 tracking-tight">
               Notes
             </h1>
@@ -75,7 +82,15 @@ export default function Page() {
             >
               <span className="text-lg leading-none">+</span> New note
             </button>
-            <UserButton afterSwitchSessionUrl='/' />
+            <UserButton afterSwitchSessionUrl='/'>
+              <UserButton.MenuItems>
+                <UserButton.Action
+                  label="Delete My Account"
+                  labelIcon={<UserRoundX size={'sm'} />}
+                  onClick={() => alert('hello world')}
+                />
+              </UserButton.MenuItems>
+            </UserButton>
           </div>
         </div>
 
@@ -132,9 +147,9 @@ export default function Page() {
                 <span className="text-xs text-stone-400">
                   {note.updatedAt
                     ? new Date(note.updatedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: '2-digit',
-                      })
+                      month: 'short',
+                      day: '2-digit',
+                    })
                     : '—'}
                 </span>
                 <span className="text-stone-200">·</span>

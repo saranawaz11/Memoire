@@ -5,13 +5,15 @@ from database import Base
 
 
 class AppUser(Base):
-    # """Local profile keyed by Clerk user id; role defaults to customer."""
-
     __tablename__ = "app_users"
 
     id = Column(Integer, primary_key=True, index=True)
     clerk_user_id = Column(String, unique=True, nullable=False, index=True)
-    role = Column(String, nullable=False, default="customer")
+    role = Column(String, nullable=False, default="user")
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    joined_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Note(Base):
