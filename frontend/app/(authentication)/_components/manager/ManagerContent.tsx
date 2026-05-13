@@ -16,7 +16,7 @@ export default function ManagerContent({
         <div className="flex flex-col gap-3">
             {users.map((user) => (
                 <Card
-                    key={user.clerk_user_id}
+                    key={user.clerkUserId}
                     className="relative border hover:border-green-600 transition-all duration-200"
                 >
                     <UsersList

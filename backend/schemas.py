@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -17,16 +16,14 @@ class NoteUpdate(BaseModel):
 
 
 class NoteResponse(BaseModel):
-    # """JSON uses camelCase for the Next.js frontend."""
-
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: int
-    title: str
-    user_id: str = Field(serialization_alias="userId")
-    content: Optional[str] = None
-    tags: List[str]
-    word_count: int = Field(serialization_alias="wordCount")
+    id:         int
+    title:      str
+    user_id:    str      = Field(serialization_alias="userId")
+    content:    Optional[str] = None
+    tags:       List[str]
+    word_count: int      = Field(serialization_alias="wordCount")
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime = Field(serialization_alias="updatedAt")
 
@@ -34,18 +31,21 @@ class NoteResponse(BaseModel):
 class MeResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    user_id:    str        = Field(serialization_alias="userId")
+    user_id:    str            = Field(serialization_alias="userId")
     role:       str
-    first_name: str | None = Field(None, serialization_alias="firstName")
-    last_name:  str | None = Field(None, serialization_alias="lastName")
-    email:      str | None = None
+    first_name: Optional[str]  = Field(None, serialization_alias="firstName")
+    last_name:  Optional[str]  = Field(None, serialization_alias="lastName")
+    email:      Optional[str]  = None
 
 
 class UserListResponse(BaseModel):
-    clerk_user_id: str
-    role: str
-    first_name: str | None = None
-    last_name: str | None = None
-    email: str | None = None
-    note_count: int
-    joined_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    clerk_user_id: str            = Field(serialization_alias="clerkUserId")
+    role:          str
+    first_name:    Optional[str]  = Field(None, serialization_alias="firstName")
+    last_name:     Optional[str]  = Field(None, serialization_alias="lastName")
+    email:         Optional[str]  = None
+    note_count:    int            = Field(serialization_alias="noteCount")
+    joined_at:     Optional[datetime] = Field(None, serialization_alias="joinedAt")
+

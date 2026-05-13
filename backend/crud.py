@@ -1,7 +1,8 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+
 from models import AppUser, Note
 from schemas import NoteCreate, NoteUpdate
-
 
 def get_or_create_app_user(db: Session, clerk_user_id: str) -> AppUser:
     user = db.query(AppUser).filter(AppUser.clerk_user_id == clerk_user_id).first()
@@ -12,6 +13,39 @@ def get_or_create_app_user(db: Session, clerk_user_id: str) -> AppUser:
     db.commit()
     db.refresh(user)
     return user
+
+
+def get_all_users_with_note_count(db: Session):
+    return (
+        db.query(
+            AppUser.clerk_user_id,
+            AppUser.role,
+            AppUser.first_name,
+            AppUser.last_name,
+            AppUser.email,
+            AppUser.joined_at,
+            func.count(Note.id).label("note_count"),
+        )
+        .outerjoin(Note, Note.user_id == AppUser.clerk_user_id)
+        .group_by(
+            AppUser.clerk_user_id,
+            AppUser.role,
+            AppUser.first_name,
+            AppUser.last_name,
+            AppUser.email,
+            AppUser.joined_at,
+        )
+        .all()
+    )
+
+
+def delete_user(db: Session, clerk_user_id: str) -> bool:
+    user = db.query(AppUser).filter(AppUser.clerk_user_id == clerk_user_id).first()
+    if not user:
+        return False
+    db.delete(user)
+    db.commit()
+    return True
 
 
 def get_note(db: Session, note_id: int) -> Note | None:
@@ -59,3 +93,4 @@ def delete_note(db: Session, note_id: int) -> bool:
     db.delete(note)
     db.commit()
     return True
+

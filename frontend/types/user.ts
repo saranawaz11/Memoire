@@ -1,9 +1,9 @@
 export type AppUser = {
-    clerk_user_id: string
+    clerkUserId: string
     role: 'user' | 'manager'
-    first_name: string | null
-    last_name: string | null
-    email: string
-    note_count: number
-    joined_at?: string
+    firstName: string | null
+    lastName: string | null
+    email: string | null
+    noteCount: number
+    joinedAt?: string
 }
