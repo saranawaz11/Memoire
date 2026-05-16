@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY
 from database import Base
+from sqlalchemy.sql import func
+
 
 
 def utcnow():
@@ -17,7 +19,9 @@ class AppUser(Base):
     first_name    = Column(String, nullable=True)
     last_name     = Column(String, nullable=True)
     email         = Column(String, nullable=True)
-    joined_at     = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    # joined_at     = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    joined_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
 
 
 class Note(Base):
@@ -29,5 +33,7 @@ class Note(Base):
     content    = Column(Text)
     tags       = Column(ARRAY(String), default=list)
     word_count = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), default=utcnow)
-    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    # created_at = Column(DateTime(timezone=True), default=utcnow)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    # updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

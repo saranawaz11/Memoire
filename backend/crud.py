@@ -43,6 +43,7 @@ def delete_user(db: Session, clerk_user_id: str) -> bool:
     user = db.query(AppUser).filter(AppUser.clerk_user_id == clerk_user_id).first()
     if not user:
         return False
+    db.query(Note).filter(Note.user_id == clerk_user_id).delete()
     db.delete(user)
     db.commit()
     return True
@@ -53,8 +54,14 @@ def get_note(db: Session, note_id: int) -> Note | None:
 
 
 def get_notes_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 100) -> list[Note]:
-    return db.query(Note).filter(Note.user_id == user_id).offset(skip).limit(limit).all()
-
+    return (
+        db.query(Note)
+        .filter(Note.user_id == user_id)
+        .order_by(Note.updated_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 def create_note(db: Session, data: NoteCreate, user_id: str) -> Note:
     note = Note(

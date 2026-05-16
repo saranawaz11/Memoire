@@ -92,6 +92,12 @@ def delete_user(
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
 
+@app.delete("/me", status_code=204)
+def delete_me(
+    user: models.AppUser = Depends(get_db_user),
+    db: Session = Depends(get_db),
+):
+    crud.delete_user(db, user.clerk_user_id)
 
 @app.post("/notes/", response_model=NoteResponse, response_model_by_alias=True, status_code=201)
 def create_note(

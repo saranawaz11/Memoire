@@ -1,12 +1,15 @@
 'use client'
 
 import { Note } from '@/types/note'
-import { Pencil, Hash, UserRoundX } from 'lucide-react'
+import { Pencil, Hash, UserRoundX, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import DeleteButton from '../components/Deletebutton'
-import { useAuth, UserButton } from '@clerk/nextjs'
+import { useAuth, UserButton, useUser } from '@clerk/nextjs'
 import Link from 'next/link'
+import { formatNoteDate } from '@/lib/helpers'
+import { DeleteUser } from '../components/DeleteUser'
+import { ConfirmModal } from '../components/modals/ConfirmModal'
 
 type MeProfile = { userId: string; role: string }
 
@@ -14,7 +17,9 @@ export default function Page() {
   const [notes, setNotes] = useState<Note[]>([])
   const [profile, setProfile] = useState<MeProfile | null>(null)
   const router = useRouter()
-  const { userId } = useAuth()
+  const { userId, signOut } = useAuth()
+  const { user } = useUser()
+
 
   useEffect(() => {
     if (!userId) return
@@ -50,7 +55,10 @@ export default function Page() {
   //   setNotes((prev) => prev.filter((n) => n.id !== id))
   // }
 
+  console.log('Notes in notes:- ', notes);
+
   return (
+
     <div className="min-h-screen bg-[#f7f5f0]">
       <div className="max-w-6xl mx-auto px-8 py-12">
 
@@ -75,25 +83,23 @@ export default function Page() {
             </h1>
           </div>
 
-          <div className='flex gap-5'>
+          <div className='flex gap-5 items-center'>
             <button
               onClick={() => router.push('/notes/form')}
               className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
             >
               <span className="text-lg leading-none">+</span> New note
             </button>
-            <UserButton afterSwitchSessionUrl='/'>
-              <UserButton.MenuItems>
-                <UserButton.Action
-                  label="Delete My Account"
-                  labelIcon={<UserRoundX size={'sm'} />}
-                  onClick={() => alert('hello world')}
-                />
-              </UserButton.MenuItems>
-            </UserButton>
+
+            <DeleteUser
+              userId={userId}
+              signOut={signOut}
+              onDeleted={() => router.push('/')}
+            />
+
+            <UserButton afterSwitchSessionUrl='/' />
           </div>
         </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {notes.map((note) => (
             <div
@@ -109,56 +115,51 @@ export default function Page() {
                   <Pencil size={14} />
                 </button>
 
-                <div onClick={(e) => e.stopPropagation()}>
-                  <DeleteButton
-                    id={note.id}
-                    endpoint="notes"
-                    onSuccess={() => setNotes((prev) => prev.filter((n) => n.id !== note.id))}
-                    className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors"
-                  />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DeleteButton
+                      id={note.id}
+                      endpoint="notes"
+                      onSuccess={() => setNotes((prev) => prev.filter((n) => n.id !== note.id))}
+                      className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <h3 className="text-base font-semibold text-stone-800 leading-snug pr-14">
+                  {note.title}
+                </h3>
+
+                {note.content && (
+                  <p className="text-sm text-stone-500 leading-relaxed line-clamp-3">
+                    {note.content}
+                  </p>
+                )}
+
+                {(note.tags?.length ?? 0) > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {(note.tags ?? []).map((tag, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5 rounded-md"
+                      >
+                        <Hash size={10} />
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mt-auto pt-2 border-t border-stone-100">
+                  <span className="text-xs text-stone-400">
+                    {note.updatedAt ? formatNoteDate(note.updatedAt) : '—'}
+                  </span>
+                  <span className="text-stone-200">·</span>
+                  <span className="text-xs text-stone-400">
+                    {typeof note.wordCount === 'number' ? `${note.wordCount} words` : '—'}
+                  </span>
                 </div>
               </div>
-
-              <h3 className="text-base font-semibold text-stone-800 leading-snug pr-14">
-                {note.title}
-              </h3>
-
-              {note.content && (
-                <p className="text-sm text-stone-500 leading-relaxed line-clamp-3">
-                  {note.content}
-                </p>
-              )}
-
-              {(note.tags?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {(note.tags ?? []).map((tag, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5 rounded-md"
-                    >
-                      <Hash size={10} />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 mt-auto pt-2 border-t border-stone-100">
-                <span className="text-xs text-stone-400">
-                  {note.updatedAt
-                    ? new Date(note.updatedAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: '2-digit',
-                    })
-                    : '—'}
-                </span>
-                <span className="text-stone-200">·</span>
-                <span className="text-xs text-stone-400">
-                  {typeof note.wordCount === 'number' ? `${note.wordCount} words` : '—'}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
 
         {notes.length === 0 && (
