@@ -22,15 +22,20 @@ export default function Page() {
 
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId || !user) return
 
     fetch('http://127.0.0.1:8000/me', {
-      headers: { 'x-user-id': userId },
+      headers: {
+        'x-user-id': userId,
+        'x-first-name': user.firstName ?? '',
+        'x-last-name': user.lastName ?? '',
+        'x-email': user.emailAddresses[0]?.emailAddress ?? '',
+      },
     })
       .then(async (r) => (r.ok ? r.json() : null))
       .then((data) => setProfile(data))
       .catch(() => setProfile(null))
-  }, [userId])
+  }, [userId, user])
 
   useEffect(() => {
     if (!userId) return
@@ -49,13 +54,6 @@ export default function Page() {
       })
   }, [userId])
 
-  // const handleDelete = async (e: React.MouseEvent, id: number) => {
-  //   e.stopPropagation()
-  //   await fetch(`http://127.0.0.1:8000/note/${id}`, { method: 'DELETE' })
-  //   setNotes((prev) => prev.filter((n) => n.id !== id))
-  // }
-
-  console.log('Notes in notes:- ', notes);
 
   return (
 

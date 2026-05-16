@@ -27,11 +27,6 @@ export default function Home() {
             </>
           )}
 
-          {/* <SignedOut>
-            <Link href="/sign-in">Sign in</Link>
-            <Link href="/sign-up">Get started</Link>
-          </SignedOut> */}
-
           {isLoaded && isSignedIn && (
             <>
               <Button variant={'outline'} size="lg" asChild className='bg-green-700 hover:bg-green-800 text-white hover:text-white'>
@@ -42,12 +37,6 @@ export default function Home() {
               <UserButton afterSwitchSessionUrl="/" />
             </>
           )}
-
-
-          {/* <SignedIn>
-            <Link href="/notes">My notes</Link>
-            <UserButton />
-          </SignedIn> */}
         </div>
       </nav>
 
@@ -87,22 +76,12 @@ export default function Home() {
             </>
           )}
 
-          {/* {isLoaded && isSignedIn && (
-            <>
-              <Button variant={'outline'} size="lg" asChild className='bg-green-700 hover:bg-green-800 text-white hover:text-white'>
-                <Link href="/notes">
-                  My notes
-                </Link>
-              </Button>
-            </>
-          )} */}
         </div>
       </section>
 
       {/* Fake UI preview */}
       <section className="max-w-4xl mx-auto px-8 mb-28">
         <div className="bg-white rounded-3xl border border-stone-200 shadow-[0_20px_60px_rgba(0,0,0,0.07)] overflow-hidden">
-          {/* fake toolbar */}
           <div className="flex items-center gap-2 px-5 py-4 border-b border-stone-100">
             <div className="w-3 h-3 rounded-full bg-stone-200" />
             <div className="w-3 h-3 rounded-full bg-stone-200" />

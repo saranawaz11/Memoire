@@ -52,7 +52,6 @@ export default function UsersList(
                 <p className="text-xs text-stone-400">notes</p>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-2">
                 <ConfirmModal onConfirm={() => handleDeleteUser(user.clerkUserId)}>
                     <button

@@ -35,11 +35,13 @@ export default async function Page({
 
     const formattedDate = note.updatedAt
         ? new Date(note.updatedAt).toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-          })
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: 'numeric'
+        })
         : ''
 
     return (

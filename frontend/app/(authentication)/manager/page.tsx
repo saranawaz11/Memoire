@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { AppUser } from '@/types/user'
 import { FilterType, MeProfile, UsersFetchStatus } from '@/types/manager'
 import { displayName } from '@/lib/helpers'
-import ManagerSearchBar from '@/app/(authentication)/_components/ManagerSearchBar'
+import ManagerSearchBar from '@/app/(authentication)/_components/manager/ManagerSearchBar'
 import ManagerHeader from '@/app/(authentication)/_components/manager/ManagerHeader'
 import ManagerStats from '@/app/(authentication)/_components/manager/ManagerStats'
 import ManagerContent from '@/app/(authentication)/_components/manager/ManagerContent'
@@ -80,30 +80,6 @@ export default function ManagerPage() {
             queueMicrotask(() => setUsersFetchStatus('idle'))
         }
     }, [userId, meReady, profile?.role])
-
-    // async function handleDeleteUser(targetId: string) {
-    //     if (!userId) return
-
-    //     await fetch(`http://127.0.0.1:8000/users/${targetId}`, {
-    //         method: 'DELETE',
-    //         headers: { 'x-user-id': userId },
-    //     })
-    //     // this only removes from UI
-    //     setUsers((prev) => prev.filter((u) => u.clerk_user_id !== targetId))
-    // }
-
-    // const filtered = users.filter((u) => {
-    //     const matchesFilter = filter === 'all' || u.role === filter
-    //     const needle = search.toLowerCase()
-    //     const matchesSearch =
-    //         u.clerk_user_id.toLowerCase().includes(needle) ||
-    //         displayName(u).toLowerCase().includes(needle) ||
-    //         (u.email ?? '').toLowerCase().includes(needle)
-    //     return matchesFilter && matchesSearch
-    // })
-
-    // const totalNotes = filtered.reduce((acc, u) => acc + u.note_count, 0)
-    // const managerCount = filtered.filter((u) => u.role === 'manager').length
 
 
     async function handleDeleteUser(targetId: string) {
