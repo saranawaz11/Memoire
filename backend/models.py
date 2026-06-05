@@ -32,5 +32,6 @@ class Note(Base):
     content    = Column(Text)
     tags       = Column(ARRAY(String), default=list)
     word_count = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+

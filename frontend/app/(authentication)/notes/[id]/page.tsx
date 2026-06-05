@@ -93,9 +93,19 @@ export default async function Page({
 
                 <div className="h-px bg-stone-200 mb-8" />
 
-                <div className="text-stone-600 text-[15px] leading-[1.85] whitespace-pre-wrap">
+                {/* <div className="text-stone-600 text-[15px] leading-[1.85] whitespace-pre-wrap">
                     {note.content}
-                </div>
+                </div> */}
+
+                {/* <div
+                    className="note-content text-stone-600 text-[15px] leading-[1.85]"
+                    dangerouslySetInnerHTML={{ __html: note.content }}
+                /> */}
+
+                <div
+                    className="rich-text text-stone-600 text-[15px] leading-[1.85]"
+                    dangerouslySetInnerHTML={{ __html: note.content }}
+                />
 
                 <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
                     <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">

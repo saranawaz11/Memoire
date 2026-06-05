@@ -1,7 +1,7 @@
 'use client'
 
 import { Note } from '@/types/note'
-import { Pencil, Hash, UserRoundX, Trash2 } from 'lucide-react'
+import { Pencil, Hash, UserRoundX, Trash2, LayoutGrid, List } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import DeleteButton from '../components/Deletebutton'
@@ -19,6 +19,8 @@ export default function Page() {
   const router = useRouter()
   const { userId, signOut } = useAuth()
   const { user } = useUser()
+
+  // console.log('profile in notes:- ', profile);
 
 
   useEffect(() => {
@@ -61,8 +63,22 @@ export default function Page() {
       <div className="max-w-6xl mx-auto px-8 py-12">
 
         <div className="flex items-end justify-between mb-10">
+
           <div>
-            <p className="text-xs font-medium tracking-widest text-green-600 uppercase mb-1">
+            <h2 className="text-4xl font-bold text-stone-800 tracking-tight">
+              Gallrey View
+            </h2>
+            <p className="text-sm text-neutral-500">Visual curation of your creative flow</p>
+          </div>
+
+
+          <div className="flex gap-3">
+            <List className='w-4! h-4!' />
+            <LayoutGrid className='w-4! h-4!' />
+          </div>
+
+          {/* <div className='flex justify-between'> */}
+          {/* <p className="text-xs font-medium tracking-widest text-green-600 uppercase mb-1">
               Your workspace
               {profile?.role && (
                 <span className="ml-2 normal-case text-stone-500 font-normal tracking-normal">
@@ -75,28 +91,27 @@ export default function Page() {
               profile?.role === 'manager' ? (
                 <Link href={'/manager'} className='my-2 text-sm text-stone-500 capitalize hover:underline hover:text-stone-800'>go to manager workspace</Link>
               ) : null
-            }
-            <h1 className="text-4xl font-bold text-stone-800 tracking-tight">
-              Notes
-            </h1>
-          </div>
+            } */}
 
-          <div className='flex gap-5 items-center'>
-            <button
+
+          {/* </div> */}
+
+          {/* <div className='flex gap-5 items-center'> */}
+          {/* <button
               onClick={() => router.push('/notes/form')}
               className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
             >
               <span className="text-lg leading-none">+</span> New note
-            </button>
+            </button> */}
 
-            <DeleteUser
+          {/* <DeleteUser
               userId={userId}
               signOut={signOut}
               onDeleted={() => router.push('/')}
-            />
+            /> */}
 
-            <UserButton afterSwitchSessionUrl='/' />
-          </div>
+          {/* <UserButton afterSwitchSessionUrl='/' /> */}
+          {/* </div> */}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {notes.map((note) => (

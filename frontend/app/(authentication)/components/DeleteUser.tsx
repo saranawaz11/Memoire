@@ -32,8 +32,8 @@ export function DeleteUser({ userId, signOut, onDeleted }: Props) {
 
     return (
         <ConfirmModal onConfirm={handleDelete}>
-            <button className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors">
-                <Trash2 size={14} />
+            <button className="flex gap-2 text-red-500 hover:text-red-700 my-3 rounded-lg hover:bg-red-50 transition-colors">
+                <Trash2 className='w-5! h-5!' />
                 Delete account
             </button>
         </ConfirmModal>

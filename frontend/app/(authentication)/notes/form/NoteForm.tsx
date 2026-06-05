@@ -1,12 +1,13 @@
 'use client'
 
 import { Note } from '@/types/note'
-import { ArrowLeft, Hash, Plus, X } from 'lucide-react'
+import { ArrowLeft, Hash, List, Plus, X } from 'lucide-react'
 import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import Tiptap from '../../components/Tiptap'
 
 type NoteFormValues = {
     title: string
@@ -19,12 +20,14 @@ export default function NoteForm({ note }: { note?: Note }) {
     const router = useRouter()
     const { userId } = useAuth()
     const [tagInput, setTagInput] = useState('')
+    const [showFormatting, setShowFormatting] = useState(false)
 
     const {
         register,
         handleSubmit,
         watch,
         setValue,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<NoteFormValues>({
         defaultValues: {
@@ -85,7 +88,7 @@ export default function NoteForm({ note }: { note?: Note }) {
 
     return (
         <div className="min-h-screen bg-[#f7f5f0]">
-            <div className="max-w-3xl mx-auto px-8 py-12 pb-32">
+            <div className="max-w-3xl mx-auto px-2 py-12 pb-32">
 
                 <button
                     type="button"
@@ -148,12 +151,26 @@ export default function NoteForm({ note }: { note?: Note }) {
 
                     <div className="h-px bg-stone-200 mb-8" />
 
-                    <textarea
+                    {/* <textarea
                         {...register('content', { required: 'Content is required' })}
                         placeholder="Start writing..."
                         rows={16}
                         className="w-full text-stone-600 text-[15px] leading-[1.85] bg-transparent border-none outline-none resize-none placeholder:text-stone-300"
+                    /> */}
+
+                    <Controller
+                        name="content"
+                        control={control}
+                        rules={{ required: 'Content is required' }}
+                        render={({ field }) => (
+                            <Tiptap
+                                content={field.value}
+                                onChange={field.onChange}
+                                showToolbar={showFormatting}   // ← add this
+                            />
+                        )}
                     />
+
                     {errors.content && (
                         <p className="text-red-400 text-xs mt-1">{errors.content.message}</p>
                     )}
@@ -162,6 +179,28 @@ export default function NoteForm({ note }: { note?: Note }) {
             </div>
 
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
+                {/* <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+                    <button
+                        type="button"
+                        onClick={() => router.back()}
+                        className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors"
+                        title="Cancel"
+                    >
+                        <ArrowLeft size={16} />
+                    </button>
+
+                    <div className="w-px h-5 bg-stone-200" />
+
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        onClick={handleSubmit(onSubmit)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-700 hover:bg-green-800 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                    >
+                        {isSubmitting ? 'Saving...' : isEditing ? 'Save changes' : 'Create note'}
+                    </button>
+                </div> */}
+
                 <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
                     <button
                         type="button"
@@ -170,6 +209,21 @@ export default function NoteForm({ note }: { note?: Note }) {
                         title="Cancel"
                     >
                         <ArrowLeft size={16} />
+                    </button>
+
+                    <div className="w-px h-5 bg-stone-200" />
+
+                    {/* Formatting toggle */}
+                    <button
+                        type="button"
+                        onClick={() => setShowFormatting(!showFormatting)}
+                        className={`p-2 rounded-xl transition-colors ${showFormatting
+                            ? 'text-green-700 bg-green-50'
+                            : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
+                            }`}
+                        title="Formatting"
+                    >
+                        <List size={16} />
                     </button>
 
                     <div className="w-px h-5 bg-stone-200" />

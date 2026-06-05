@@ -12,7 +12,7 @@ export default function Home() {
 
       <nav className="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
         <span className="text-sm font-semibold tracking-widest text-stone-800 uppercase">
-          Memoiré
+          Mémoire
         </span>
         <div className="flex items-center gap-3">
           {isLoaded && !isSignedIn && (
@@ -54,7 +54,7 @@ export default function Home() {
         </h1>
 
         <p className="text-lg text-stone-500 leading-relaxed max-w-xl mx-auto mb-10">
-          Memoiré is a calm, distraction-free space to capture your thoughts, ideas, and notes — organized just the way you like.
+          Mémoire is a calm, distraction-free space to capture your thoughts, ideas, and notes.  Organize just the way you like.
         </p>
 
         <div className="flex items-center justify-center gap-3">
@@ -86,7 +86,7 @@ export default function Home() {
             <div className="w-3 h-3 rounded-full bg-stone-200" />
             <div className="w-3 h-3 rounded-full bg-stone-200" />
             <div className="w-3 h-3 rounded-full bg-stone-200" />
-            <span className="ml-3 text-xs text-stone-400 font-mono">memoiré.app/notes</span>
+            <span className="ml-3 text-xs text-stone-400 font-mono">mémoire.app/notes</span>
           </div>
           {/* fake notes grid */}
           <div className="p-6 grid grid-cols-3 gap-3">
@@ -157,7 +157,7 @@ export default function Home() {
             Ready to start writing?
           </h2>
           <p className="text-green-200 text-sm mb-8 max-w-sm mx-auto">
-            Join others who use Memoiré to capture their best thinking every day.
+            Join others who use Mémoire to capture their best thinking every day.
           </p>
           <Link
             href="/sign-up"
@@ -171,7 +171,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="max-w-6xl mx-auto px-8 py-8 border-t border-stone-200 flex items-center justify-between">
-        <span className="text-xs font-semibold tracking-widest text-stone-400 uppercase">Memoiré</span>
+        <span className="text-xs font-semibold tracking-widest text-stone-400 uppercase">Mémoire</span>
         <p className="text-xs text-stone-400">Built with Next.js & FastAPI</p>
       </footer>
 
