@@ -1,11 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 import crud
 import models
+import rag
 from database import engine, get_db
-from schemas import MeResponse, NoteCreate, NoteUpdate, NoteResponse, UserListResponse
+from schemas import (
+    MeResponse, NoteCreate, NoteUpdate, NoteResponse, UserListResponse,
+    AIQueryRequest, AIQueryResponse, AIReindexResponse,
+)
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -102,10 +106,13 @@ def delete_me(
 @app.post("/notes/", response_model=NoteResponse, response_model_by_alias=True, status_code=201)
 def create_note(
     data: NoteCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: models.AppUser = Depends(get_db_user),
 ):
-    return crud.create_note(db, data, user.clerk_user_id)
+    note = crud.create_note(db, data, user.clerk_user_id)
+    background_tasks.add_task(rag.upsert_note_embedding_by_id, note.id)
+    return note
 
 
 @app.get("/notes/", response_model=list[NoteResponse], response_model_by_alias=True)
@@ -134,13 +141,16 @@ def get_note(
 def update_note(
     note_id: int,
     data: NoteUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: models.AppUser = Depends(get_db_user),
 ):
     note = crud.get_note(db, note_id)
     if not note or note.user_id != user.clerk_user_id:
         raise HTTPException(status_code=404, detail="Note not found")
-    return crud.update_note(db, note_id, data)
+    updated = crud.update_note(db, note_id, data)
+    background_tasks.add_task(rag.upsert_note_embedding_by_id, note_id)
+    return updated
 
 
 @app.delete("/notes/{note_id}", status_code=204)
@@ -153,3 +163,26 @@ def delete_note(
     if not note or note.user_id != user.clerk_user_id:
         raise HTTPException(status_code=404, detail="Note not found")
     crud.delete_note(db, note_id)
+
+
+# AI / RAG 
+
+@app.post("/ai/query", response_model=AIQueryResponse, response_model_by_alias=True)
+def ai_query(
+    data: AIQueryRequest,
+    db: Session = Depends(get_db),
+    user: models.AppUser = Depends(get_db_user),
+):
+    result = rag.answer_question(db, user.clerk_user_id, data.question)
+    return AIQueryResponse(answer=result["answer"], sources=result["sources"])
+
+
+@app.post("/ai/reindex", response_model=AIReindexResponse)
+def ai_reindex(
+    db: Session = Depends(get_db),
+    user: models.AppUser = Depends(get_db_user),
+):
+    """One-off backfill: embeds any of the current user's notes that
+    predate the pgvector integration (or were created before this ran)."""
+    count = rag.reindex_all_notes(db, user_id=user.clerk_user_id)
+    return AIReindexResponse(indexed=count)

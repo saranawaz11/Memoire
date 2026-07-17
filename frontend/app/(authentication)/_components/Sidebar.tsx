@@ -1,23 +1,33 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { useAuth, UserButton, useUser } from '@clerk/nextjs'
-import { User } from '@clerk/nextjs/server'
-import { Archive, NotepadText, PlusIcon, SeparatorHorizontal, Settings, Trash, Trash2 } from 'lucide-react'
+import {
+  Archive,
+  NotepadText,
+  PlusIcon,
+  Settings,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { DeleteUser } from '../components/DeleteUser'
 import { usePathname, useRouter } from 'next/navigation'
+
 type MeProfile = { userId: string; role: string }
+
+const NAV_ITEMS = [
+  { href: '/notes', label: 'All Notes', icon: NotepadText },
+  { href: '/ai', label: 'Ask AI', icon: Sparkles },
+  { href: '/notes', label: 'Trash', icon: Trash2 },
+  { href: '/notes', label: 'Archive', icon: Archive },
+]
 
 export default function Sidebar() {
   const [profile, setProfile] = useState<MeProfile | null>(null)
   const { user } = useUser()
   const { userId, signOut } = useAuth()
   const router = useRouter()
-
   const pathname = usePathname()
-
-  // const isEditorPage = pathname.startsWith('/notes/form')
 
   useEffect(() => {
     if (!userId || !user) return
@@ -35,91 +45,114 @@ export default function Sidebar() {
       .catch(() => setProfile(null))
   }, [userId, user])
 
-
   const segments = pathname.split('/').filter(Boolean)
+  const isEditorPage = segments.length === 2 && segments[0] === 'notes'
 
-const isEditorPage =
-  segments.length === 2 &&
-  segments[0] === 'notes'
-
-  // console.log('profile in sidebar:- ', user);
+  const displayName =
+    (user?.fullName ?? [user?.firstName, user?.lastName].filter(Boolean).join(' ')) || 'Your account'
+  const displayEmail = user?.primaryEmailAddress?.emailAddress ?? ''
 
   return (
-    // <div className='bg-white shadow-lg p-10 rounded-lg w-1/4 min-h-full flex flex-col'>
     <div
       className={`
-        flex flex-col min-h-full p-10 w-1/4  rounded-lg transition-all duration-300
+        flex flex-col min-h-full w-72 shrink-0 p-6 transition-all duration-300
         ${isEditorPage
           ? 'bg-transparent shadow-none border-none opacity-50 hover:opacity-100'
-          : 'bg-white shadow-lg'}
+          : 'bg-white border-r border-stone-200'}
       `}
     >
-      <h1 className='text-2xl font-bold'>Mémoire</h1>
-      <div>
-        <p className="text-xs font-medium tracking-widest text-green-600 uppercase mb-1">
+      {/* Brand */}
+      <div className="flex items-center gap-2 px-2 mb-1">
+        <div className="w-8 h-8 rounded-lg bg-green-700 flex items-center justify-center text-white font-serif font-bold text-sm">
+          M
+        </div>
+        <h1 className="text-xl font-bold text-stone-900 tracking-tight">Mémoire</h1>
+      </div>
+
+      <div className="px-2 mb-6">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-widest text-green-700 uppercase">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
           Your workspace
           {profile?.role && (
-            <span className="ml-2 normal-case text-stone-500 font-normal tracking-normal">
-              | {profile.role}
+            <span className="normal-case text-stone-400 font-normal tracking-normal">
+              · {profile.role}
             </span>
           )}
-        </p>
-        {
-          profile?.role === 'manager' ? (
-            <Link href={'/manager'} className='my-2 text-sm text-stone-500 capitalize hover:underline hover:text-stone-800'>go to manager workspace</Link>
-          ) : null}
+        </span>
+        {profile?.role === 'manager' && (
+          <Link
+            href="/manager"
+            className="block mt-1 text-xs text-stone-500 hover:text-green-700 hover:underline"
+          >
+            Go to manager workspace →
+          </Link>
+        )}
       </div>
 
-      <div className='flex flex-col gap-2 border border-px border-black p-4 my-6 rounded-lg'>
-        <div className='flex gap-2 items-center'>
-          <UserButton afterSwitchSessionUrl='/' />
-
-          <p className='text-md font-semibold'>Sara Nawaz</p>
+      {/* Account card */}
+      <Link
+        href="/settings"
+        className="flex items-center gap-3 p-3 mb-6 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 hover:border-stone-300 transition-colors"
+      >
+        <UserButton afterSwitchSessionUrl="/" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-stone-800 truncate">{displayName}</p>
+          <p className="text-xs text-stone-500 truncate">{displayEmail}</p>
         </div>
-        <p className='text-sm text-gray-500 ml-2'>sara@memoire.com</p>
-      </div>
+      </Link>
 
-      <div className='my-4 h-0.5 w-full bg-black' />
-      <div>
-        <Button variant="outline" onClick={() => router.push('/notes/form')} className='w-full font-extrabold text-xl my-4 py-5 bg-green-700 text-white hover:bg-green-800 hover:text-white transition-colors'>
+      {/* Primary action */}
+      <button
+        onClick={() => router.push('/notes/form')}
+        className="flex items-center justify-center gap-2 w-full py-3 mb-6 rounded-xl bg-green-700 hover:bg-green-800 text-white font-semibold shadow-sm shadow-green-900/10 transition-colors"
+      >
+        <PlusIcon className="w-4 h-4" />
+        New Note
+      </button>
 
-          <PlusIcon className='w-5! h-5! mr-1 text-3xl' />New Note
-        </Button>
-
-        {/* <button
-              onClick={() => router.push('/notes/form')}
-              className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+      {/* Nav */}
+      <nav className="flex flex-col gap-1">
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href
+          return (
+            <Link
+              key={label}
+              href={href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                active
+                  ? 'bg-green-50 text-green-800'
+                  : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+              }`}
             >
-              <span className="text-lg leading-none">+</span> New note
-            </button> */}
+              <Icon className="w-4 h-4" />
+              {label}
+            </Link>
+          )
+        })}
+      </nav>
 
-        <Link href='/notes' className='flex items-center gap-2 text-lg font-semibold hover:text-green-900 transition-colors my-3'>
-          <NotepadText className='w-5 h-5' />
-          All Notes
-        </Link>
+      <div className="flex-1" />
 
-        <Link href='/notes' className='flex items-center gap-2 text-lg font-semibold hover:text-green-900 transition-colors my-3'>
-          <Trash2 className='w-5 h-5' />
-          Trash
-        </Link>
-
-        <Link href='/notes' className='flex items-center gap-2 text-lg font-semibold hover:text-green-900 transition-colors my-3'>
-          <Archive className='w-5 h-5' />
-          Archive
-        </Link>
-      </div>
-      <div className='my-4 h-0.5 w-full bg-black' />
-      <div>
-        <Link href='/notes' className='flex items-center gap-2 text-lg font-semibold hover:text-green-900 transition-colors my-3'>
-          <Settings className='w-5 h-5' />
+      <div className="pt-4 mt-4 border-t border-stone-200 flex flex-col gap-1">
+        <Link
+          href="/settings"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            pathname === '/settings'
+              ? 'bg-green-50 text-green-800'
+              : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+          }`}
+        >
+          <Settings className="w-4 h-4" />
           Settings
         </Link>
 
-        <DeleteUser
-              userId={userId}
-              signOut={signOut}
-              onDeleted={() => router.push('/')}
-            />
+        <div className="px-3 pt-1">
+          <DeleteUser
+            userId={userId}
+            signOut={signOut}
+            onDeleted={() => router.push('/')}
+          />
+        </div>
       </div>
     </div>
   )
