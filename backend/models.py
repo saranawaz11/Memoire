@@ -6,8 +6,6 @@ from pgvector.sqlalchemy import Vector
 from database import Base
 from sqlalchemy.sql import func
 
-
-
 def utcnow():
     return datetime.now(timezone.utc)
 
@@ -46,11 +44,6 @@ class Note(Base):
 
 
 class NoteChunk(Base):
-    """
-    One row per chunk of a note's content, each with its own embedding.
-    Longer notes get split into several chunks so retrieval can match a
-    specific passage instead of diluting the whole note into one vector.
-    """
     __tablename__ = "note_chunks"
 
     id          = Column(Integer, primary_key=True, index=True)

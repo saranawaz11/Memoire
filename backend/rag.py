@@ -2,11 +2,9 @@ import html
 import os
 import re
 from functools import lru_cache
-
 from dotenv import load_dotenv
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
 import models
 from database import SessionLocal
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -77,11 +75,6 @@ _WHITESPACE_RE = re.compile(r"[ \t]+")
 
 
 def _strip_html(raw: str) -> str:
-    """
-    Notes are stored as rich-text HTML (from the editor). Strip tags before
-    embedding/chunking so vectors and LLM context reflect actual note
-    content, not markup — and so snippets shown in the UI are readable.
-    """
     if not raw:
         return ""
     text = _TAG_RE.sub(" ", raw)
@@ -93,12 +86,6 @@ def _strip_html(raw: str) -> str:
 
 
 def _chunk_note_text(note: "models.Note") -> list[str]:
-    """
-    Splits a note's title + content into overlapping chunks. The title is
-    prepended to every chunk so each one carries enough context on its own
-    (a mid-note chunk about "day 3" is meaningless without knowing which
-    note/topic it belongs to).
-    """
     tags = " ".join(note.tags or [])
     body = _strip_html(note.content or "").strip()
 
@@ -115,11 +102,6 @@ def _chunk_note_text(note: "models.Note") -> list[str]:
 
 # Writing embeddings (called after a note is created/updated)
 def upsert_note_embedding_by_id(note_id: int) -> None:
-    """
-    Recomputes and stores all chunks + embeddings for a single note.
-    Opens its own DB session so it can be safely run as a FastAPI
-    BackgroundTask (i.e. after the request's own session has closed).
-    """
     db: Session = SessionLocal()
     try:
         note = db.query(models.Note).filter(models.Note.id == note_id).first()
@@ -132,8 +114,6 @@ def upsert_note_embedding_by_id(note_id: int) -> None:
 
 
 def _reembed_note(db: Session, note: "models.Note") -> None:
-    # Replace old chunks outright — simplest way to stay correct on edits
-    # (title/content changes shift chunk boundaries anyway).
     db.query(models.NoteChunk).filter(models.NoteChunk.note_id == note.id).delete()
 
     texts = _chunk_note_text(note)
@@ -151,10 +131,6 @@ def _reembed_note(db: Session, note: "models.Note") -> None:
 
 
 def reindex_all_notes(db: Session, user_id: str | None = None) -> int:
-    """
-    Rebuilds chunks + embeddings for a user's notes (or all notes).
-    Returns the number of notes processed.
-    """
     query = db.query(models.Note)
     if user_id:
         query = query.filter(models.Note.user_id == user_id)
@@ -220,8 +196,6 @@ def answer_question(db: Session, user_id: str, question: str) -> dict:
     result = llm.invoke(prompt)
     answer_text = getattr(result, "content", str(result))
 
-    # Dedupe chunks -> distinct notes, keeping the first (best-ranked) hit
-    # per note, preserving similarity order, capped at TOP_K_NOTES.
     seen_note_ids: set[int] = set()
     sources = []
     for chunk in chunks:

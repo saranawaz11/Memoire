@@ -8,6 +8,7 @@ import React, { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import Tiptap from '../../components/Tiptap'
+import { apiFetch } from '@/lib/api'
 
 type NoteFormValues = {
     title: string
@@ -18,7 +19,8 @@ type NoteFormValues = {
 export default function NoteForm({ note }: { note?: Note }) {
     const isEditing = !!note
     const router = useRouter()
-    const { userId } = useAuth()
+    // CHANGED: pull getToken alongside userId
+    const { userId, getToken } = useAuth()
     const [tagInput, setTagInput] = useState('')
     const [showFormatting, setShowFormatting] = useState(false)
 
@@ -57,17 +59,13 @@ export default function NoteForm({ note }: { note?: Note }) {
             return
         }
 
-        const url = isEditing
-            ? `http://127.0.0.1:8000/notes/${note!.id}`
-            : `http://127.0.0.1:8000/notes/`
+        // CHANGED: path only (apiFetch prepends the API base URL)
+        const path = isEditing ? `/notes/${note!.id}` : `/notes/`
 
         try {
-            const res = await fetch(url, {
+            // CHANGED: was fetch(url, { headers: { 'x-user-id': userId, ... } })
+            const res = await apiFetch(path, getToken, {
                 method: isEditing ? 'PATCH' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': userId,
-                },
                 body: JSON.stringify(values),
             })
 
@@ -151,13 +149,6 @@ export default function NoteForm({ note }: { note?: Note }) {
 
                     <div className="h-px bg-stone-200 mb-8" />
 
-                    {/* <textarea
-                        {...register('content', { required: 'Content is required' })}
-                        placeholder="Start writing..."
-                        rows={16}
-                        className="w-full text-stone-600 text-[15px] leading-[1.85] bg-transparent border-none outline-none resize-none placeholder:text-stone-300"
-                    /> */}
-
                     <Controller
                         name="content"
                         control={control}
@@ -166,7 +157,7 @@ export default function NoteForm({ note }: { note?: Note }) {
                             <Tiptap
                                 content={field.value}
                                 onChange={field.onChange}
-                                showToolbar={showFormatting}   // ← add this
+                                showToolbar={showFormatting}
                             />
                         )}
                     />
@@ -179,28 +170,6 @@ export default function NoteForm({ note }: { note?: Note }) {
             </div>
 
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
-                {/* <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
-                    <button
-                        type="button"
-                        onClick={() => router.back()}
-                        className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors"
-                        title="Cancel"
-                    >
-                        <ArrowLeft size={16} />
-                    </button>
-
-                    <div className="w-px h-5 bg-stone-200" />
-
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        onClick={handleSubmit(onSubmit)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-700 hover:bg-green-800 disabled:opacity-50 text-white text-sm font-medium transition-colors"
-                    >
-                        {isSubmitting ? 'Saving...' : isEditing ? 'Save changes' : 'Create note'}
-                    </button>
-                </div> */}
-
                 <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
                     <button
                         type="button"
@@ -213,7 +182,6 @@ export default function NoteForm({ note }: { note?: Note }) {
 
                     <div className="w-px h-5 bg-stone-200" />
 
-                    {/* Formatting toggle */}
                     <button
                         type="button"
                         onClick={() => setShowFormatting(!showFormatting)}

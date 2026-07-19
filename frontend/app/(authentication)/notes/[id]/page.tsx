@@ -10,17 +10,22 @@ export default async function Page({
     params: Promise<{ id: string }>
 }) {
     const { id } = await params
-    const { userId } = await auth()
+    // CHANGED: also grab getToken
+    const { userId, getToken } = await auth()
 
     if (!userId) notFound()
 
+    // CHANGED: get the token once, reuse for both requests
+    const token = await getToken()
+    const authHeader = { Authorization: `Bearer ${token}` }
+
     const [noteRes, meRes] = await Promise.all([
         fetch(`http://127.0.0.1:8000/notes/${id}`, {
-            headers: { 'x-user-id': userId },
+            headers: authHeader,
             cache: 'no-store',
         }),
         fetch(`http://127.0.0.1:8000/me`, {
-            headers: { 'x-user-id': userId },
+            headers: authHeader,
             cache: 'no-store',
         }),
     ])
@@ -92,15 +97,6 @@ export default async function Page({
                 )}
 
                 <div className="h-px bg-stone-200 mb-8" />
-
-                {/* <div className="text-stone-600 text-[15px] leading-[1.85] whitespace-pre-wrap">
-                    {note.content}
-                </div> */}
-
-                {/* <div
-                    className="note-content text-stone-600 text-[15px] leading-[1.85]"
-                    dangerouslySetInnerHTML={{ __html: note.content }}
-                /> */}
 
                 <div
                     className="rich-text text-stone-600 text-[15px] leading-[1.85]"

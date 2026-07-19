@@ -4,11 +4,26 @@ from sqlalchemy.orm import Session
 from models import AppUser, Note
 from schemas import NoteCreate, NoteUpdate
 
-def get_or_create_app_user(db: Session, clerk_user_id: str) -> AppUser:
-    user = db.query(AppUser).filter(AppUser.clerk_user_id == clerk_user_id).first()
+
+def get_app_user(db: Session, clerk_user_id: str) -> AppUser | None:
+    return db.query(AppUser).filter(AppUser.clerk_user_id == clerk_user_id).first()
+
+
+def get_or_create_app_user(
+    db: Session, clerk_user_id: str, profile: dict | None = None
+) -> AppUser:
+    user = get_app_user(db, clerk_user_id)
     if user:
         return user
-    user = AppUser(clerk_user_id=clerk_user_id, role="user")
+
+    profile = profile or {}
+    user = AppUser(
+        clerk_user_id=clerk_user_id,
+        role="user",
+        first_name=profile.get("first_name"),
+        last_name=profile.get("last_name"),
+        email=profile.get("email"),
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -38,7 +53,6 @@ def get_all_users_with_note_count(db: Session):
         .all()
     )
 
-
 def delete_user(db: Session, clerk_user_id: str) -> bool:
     user = db.query(AppUser).filter(AppUser.clerk_user_id == clerk_user_id).first()
     if not user:
@@ -48,10 +62,8 @@ def delete_user(db: Session, clerk_user_id: str) -> bool:
     db.commit()
     return True
 
-
 def get_note(db: Session, note_id: int) -> Note | None:
     return db.query(Note).filter(Note.id == note_id).first()
-
 
 def get_notes_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 100) -> list[Note]:
     return (
@@ -91,7 +103,6 @@ def update_note(db: Session, note_id: int, data: NoteUpdate) -> Note | None:
     db.commit()
     db.refresh(note)
     return note
-
 
 def delete_note(db: Session, note_id: int) -> bool:
     note = get_note(db, note_id)
