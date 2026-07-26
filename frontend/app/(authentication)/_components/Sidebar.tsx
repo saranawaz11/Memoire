@@ -148,8 +148,6 @@ export default function Sidebar() {
 
         <div className="px-3 pt-1">
           <DeleteUser
-            userId={userId}
-            signOut={signOut}
             onDeleted={() => router.push('/')}
           />
         </div>

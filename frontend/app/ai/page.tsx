@@ -6,15 +6,10 @@
 // Lets the user ask a question and get an answer generated from their own
 // notes (pgvector similarity search + LLM), with links back to the exact
 // notes that were used as sources.
-//
-// Assumes:
-// - Clerk is already wired up in this app (useUser from @clerk/nextjs).
-// - Individual notes are viewable at /notes/[id]. Change NOTE_HREF below
-//   if your route is different.
 
 import { useState } from "react";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { askAI, type AISourceNote } from "@/lib/ai";
 
 const NOTE_HREF = (id: number) => `/notes/${id}`;
@@ -26,7 +21,8 @@ interface Exchange {
 }
 
 export default function AIPage() {
-  const { user, isLoaded } = useUser();
+  const { isLoaded: userLoaded } = useUser();
+  const { getToken, isLoaded: authLoaded } = useAuth();
   const [question, setQuestion] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,18 +31,18 @@ export default function AIPage() {
   async function handleAsk(e: React.FormEvent) {
     e.preventDefault();
     const q = question.trim();
-    if (!q || !user || loading) return;
+    if (!q || loading) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await askAI(q, {
-        userId: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.primaryEmailAddress?.emailAddress,
-      });
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Not signed in.");
+      }
+
+      const result = await askAI(q, token);
       setExchanges((prev) => [
         ...prev,
         { question: q, answer: result.answer, sources: result.sources },
@@ -59,7 +55,7 @@ export default function AIPage() {
     }
   }
 
-  if (!isLoaded) return null;
+  if (!userLoaded || !authLoaded) return null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -68,7 +64,7 @@ export default function AIPage() {
           Ask your notes
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Search across everything you've written. Answers link straight
+          Search across everything you have written. Answers link straight
           back to the notes they came from.
         </p>
       </header>

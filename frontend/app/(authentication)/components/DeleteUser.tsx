@@ -2,23 +2,25 @@
 
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuth } from '@clerk/nextjs'
 import { ConfirmModal } from './modals/ConfirmModal'
+import { apiFetch } from '@/lib/api'
 
 type Props = {
-    userId: string | null | undefined
-    signOut: () => Promise<void>
     onDeleted: () => void
 }
 
-export function DeleteUser({ userId, signOut, onDeleted }: Props) {
+export function DeleteUser({ onDeleted }: Props) {
+    // CHANGED: pull everything from useAuth() directly instead of via
+    // props — getToken has to come from the same hook call as userId.
+    const { userId, getToken, signOut } = useAuth()
+
     const handleDelete = async () => {
         if (!userId) return
 
         try {
-            const res = await fetch('http://127.0.0.1:8000/me', {
-                method: 'DELETE',
-                headers: { 'x-user-id': userId },
-            })
+            // CHANGED: was fetch(url, { headers: { 'x-user-id': userId } })
+            const res = await apiFetch('/me', getToken, { method: 'DELETE' })
 
             if (!res.ok) throw new Error('Failed to delete account')
 

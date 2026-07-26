@@ -1,8 +1,8 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-
-from models import AppUser, Note
+from models import AppUser, Note, ChatMessage
 from schemas import NoteCreate, NoteUpdate
+from datetime import datetime, timezone
 
 
 def get_app_user(db: Session, clerk_user_id: str) -> AppUser | None:
@@ -62,8 +62,20 @@ def delete_user(db: Session, clerk_user_id: str) -> bool:
     db.commit()
     return True
 
-def get_note(db: Session, note_id: int) -> Note | None:
-    return db.query(Note).filter(Note.id == note_id).first()
+
+def get_note_for_user(
+    db: Session,
+    note_id: int,
+    user_id: str,
+) -> Note | None:
+    return (
+        db.query(Note)
+        .filter(
+            Note.id == note_id,
+            Note.user_id == user_id,
+        )
+        .first()
+    )
 
 def get_notes_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 100) -> list[Note]:
     return (
@@ -89,26 +101,122 @@ def create_note(db: Session, data: NoteCreate, user_id: str) -> Note:
     return note
 
 
-def update_note(db: Session, note_id: int, data: NoteUpdate) -> Note | None:
-    note = get_note(db, note_id)
-    if not note:
+def update_note_for_user(
+    db: Session,
+    note_id: int,
+    user_id: str,
+    data: NoteUpdate,
+) -> Note | None:
+
+    note = (
+        db.query(Note)
+        .filter(
+            Note.id == note_id,
+            Note.user_id == user_id,
+        )
+        .first()
+    )
+
+    if note is None:
         return None
+
     if data.title is not None:
         note.title = data.title
+
     if data.content is not None:
         note.content = data.content
         note.word_count = len(data.content.split())
+
     if data.tags is not None:
         note.tags = data.tags
+
     db.commit()
     db.refresh(note)
+
     return note
 
-def delete_note(db: Session, note_id: int) -> bool:
-    note = get_note(db, note_id)
-    if not note:
+
+
+def delete_note_for_user(
+    db: Session,
+    note_id: int,
+    user_id: str,
+) -> bool:
+    note = (
+        db.query(Note)
+        .filter(
+            Note.id == note_id,
+            Note.user_id == user_id,
+        )
+        .first()
+    )
+
+    if note is None:
         return False
+    user = (
+        db.query(AppUser)
+        .filter(AppUser.clerk_user_id == user_id)
+        .first()
+    )
+    if user.last_open_note_id == note_id:
+        user.last_open_note_id = None
+
     db.delete(note)
     db.commit()
+
     return True
 
+
+
+def update_last_open_note(
+    db: Session,
+    user: AppUser,
+    note_id: int,
+):
+    user.last_open_note_id = note_id
+    user.last_opened_at = datetime.now(timezone.utc)
+
+    db.commit()
+
+
+# Chat history, used by memory.py for the notes assistant
+def add_chat_message(
+    db: Session,
+    user_id: str,
+    role: str,
+    content: str,
+    data: str | None = None,
+) -> ChatMessage:
+    msg = ChatMessage(user_id=user_id, role=role, content=content or "", data=data)
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+    return msg
+
+
+def get_chat_context(db: Session, user_id: str, limit: int = 40) -> list[ChatMessage]:
+    rows = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.user_id == user_id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return list(reversed(rows))
+
+
+def get_chat_history_for_display(
+    db: Session, user_id: str, limit: int = 50
+) -> list[ChatMessage]:
+    rows = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.user_id == user_id,
+            ChatMessage.role.in_(["human", "ai"]),
+            ChatMessage.content != "",
+        )
+        .order_by(ChatMessage.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return list(reversed(rows))

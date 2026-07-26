@@ -19,3 +19,7 @@ npm-global/
 # OS files
 .DS_Store
 Thumbs.db
+
+# python testing file
+test_*.py
+script.py

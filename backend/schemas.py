@@ -32,6 +32,7 @@ class MeResponse(BaseModel):
     first_name: Optional[str]  = Field(None, serialization_alias="firstName")
     last_name:  Optional[str]  = Field(None, serialization_alias="lastName")
     email:      Optional[str]  = None
+    last_note_id: Optional[int] = Field(None, serialization_alias="lastNoteId")
 
 
 class UserListResponse(BaseModel):
@@ -68,3 +69,21 @@ class AIQueryResponse(BaseModel):
 
 class AIReindexResponse(BaseModel):
     indexed: int
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+
+
+class ChatMessageOut(BaseModel):
+    role: str  # "human" or "ai"
+    content: str
+    created_at: datetime
+
+
+class ChatHistoryResponse(BaseModel):
+    messages: List[ChatMessageOut]

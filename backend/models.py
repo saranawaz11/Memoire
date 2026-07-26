@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from database import Base
@@ -12,14 +12,15 @@ def utcnow():
 class AppUser(Base):
     __tablename__ = "app_users"
 
-    id            = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     clerk_user_id = Column(String, unique=True, nullable=False, index=True)
-    role          = Column(String, nullable=False, default="user")
-    first_name    = Column(String, nullable=True)
-    last_name     = Column(String, nullable=True)
-    email         = Column(String, nullable=True)
+    role = Column(String, nullable=False, default="user")
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    email = Column(String, nullable=True)
     joined_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
+    last_open_note_id = Column(Integer, nullable=True)
+    last_opened_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class Note(Base):
@@ -45,6 +46,15 @@ class Note(Base):
 
 class NoteChunk(Base):
     __tablename__ = "note_chunks"
+    __table_args__ = (
+        Index(
+            "ix_note_chunks_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
 
     id          = Column(Integer, primary_key=True, index=True)
     note_id     = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -52,5 +62,16 @@ class NoteChunk(Base):
     content     = Column(Text, nullable=False)
     # all-MiniLM-L6-v2 produces 384-dim vectors.
     embedding   = Column(Vector(384), nullable=True)
-
     note = relationship("Note", back_populates="chunks")
+
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    user_id    = Column(String, nullable=False, index=True)
+    role       = Column(String, nullable=False)  # "human", "ai", or "tool"
+    content    = Column(Text, nullable=False, default="")
+    data       = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

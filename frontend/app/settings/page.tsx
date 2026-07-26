@@ -1,29 +1,43 @@
 'use client'
 
-import { useUser, useAuth } from '@clerk/nextjs'
+import { useUser, useAuth, useReverification } from '@clerk/nextjs'
 import React, { useEffect, useState } from 'react'
-import { Check, Loader2, Moon, RefreshCw, Sun, User as UserIcon } from 'lucide-react'
+import {
+  ArrowLeft, Check, Loader2, Monitor, RefreshCw, User as UserIcon,
+} from 'lucide-react'
 import { DeleteUser } from '../(authentication)/components/DeleteUser'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-
-const API_URL = 'http://127.0.0.1:8000'
+import { apiFetch } from '@/lib/api'
+import type { SessionWithActivities } from '@clerk/types'
+import { SignOutMenu } from '../(authentication)/_components/SignOutMenu'
 
 type Status = { type: 'idle' | 'saving' | 'success' | 'error'; message?: string }
 
 export default function SettingsPage() {
   const { user, isLoaded } = useUser()
-  const { userId, signOut } = useAuth()
+  const { userId, sessionId, getToken, signOut } = useAuth()
   const router = useRouter()
+
+  // NEW: wraps user.update() so Clerk automatically shows a verification
+  // modal (e.g. email code) when it decides this update needs fresh
+  // credentials, then retries the update once the person verifies.
+  const updateUser = useReverification((data: Parameters<NonNullable<typeof user>['update']>[0]) =>
+    user!.update(data)
+  )
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [username, setUsername] = useState('')
   const [profileStatus, setProfileStatus] = useState<Status>({ type: 'idle' })
 
-  const [darkMode, setDarkMode] = useState(false);
   const [reindexStatus, setReindexStatus] = useState<Status>({ type: 'idle' })
 
-  // Populate fields once Clerk's user object is available
+  // NEW: sessions list
+  const [sessions, setSessions] = useState<SessionWithActivities[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(true)
+  const [revokingId, setRevokingId] = useState<string | null>(null)
+
   useEffect(() => {
     if (!user) return
     setFirstName(user.firstName ?? '')
@@ -31,22 +45,51 @@ export default function SettingsPage() {
     setUsername(user.username ?? '')
   }, [user])
 
-  // Cosmetic theme toggle, persisted locally. Note: actually re-skinning the
-  // app for dark mode requires `darkMode: 'class'` in tailwind.config plus
-  // dark: variants across components — this wires up the toggle + persistence,
-  // the rest is a separate styling pass.
+  // NEW: load sessions once the user object is ready
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('memoire-theme') : null
-    const isDark = stored === 'dark'
-    setDarkMode(isDark)
-    document.documentElement.classList.toggle('dark', isDark)
-  }, [])
+    if (!user) return
+    loadSessions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
-  function toggleDarkMode() {
-    const next = !darkMode
-    setDarkMode(next)
-    document.documentElement.classList.toggle('dark', next)
-    localStorage.setItem('memoire-theme', next ? 'dark' : 'light')
+  async function loadSessions() {
+    if (!user) return
+    setSessionsLoading(true)
+    try {
+      const list = await user.getSessions()
+      setSessions(list)
+    } catch (err) {
+      console.error('Failed to load sessions', err)
+    } finally {
+      setSessionsLoading(false)
+    }
+  }
+
+  async function handleRevoke(session: SessionWithActivities) {
+    setRevokingId(session.id)
+    try {
+      await session.revoke()
+      setSessions((prev) => prev.filter((s) => s.id !== session.id))
+    } catch (err) {
+      console.error('Failed to revoke session', err)
+    } finally {
+      setRevokingId(null)
+    }
+  }
+
+  async function handleSignOutOtherDevices() {
+    const others = sessions.filter((s) => s.id !== sessionId)
+    if (others.length === 0) return
+
+    setRevokingId('all')
+    try {
+      await Promise.all(others.map((s) => s.revoke()))
+      setSessions((prev) => prev.filter((s) => s.id === sessionId))
+    } catch (err) {
+      console.error('Failed to sign out other devices', err)
+    } finally {
+      setRevokingId(null)
+    }
   }
 
   async function handleSaveProfile(e: React.FormEvent) {
@@ -54,23 +97,20 @@ export default function SettingsPage() {
     if (!user) return
     setProfileStatus({ type: 'saving' })
     try {
-      await user.update({
+      // CHANGED: was user.update(...) directly. Now goes through
+      // useReverification(), which shows Clerk's verification modal if
+      // the session needs fresh credentials, then retries automatically.
+      await updateUser({
         firstName: firstName || undefined,
         lastName: lastName || undefined,
         ...(username ? { username } : {}),
       })
 
-      // Sync backend AppUser immediately (it normally syncs lazily on /me)
-      if (userId) {
-        await fetch(`${API_URL}/me`, {
-          headers: {
-            'x-user-id': userId,
-            'x-first-name': firstName,
-            'x-last-name': lastName,
-            'x-email': user.primaryEmailAddress?.emailAddress ?? '',
-          },
-        })
-      }
+      // CHANGED: was fetch with x-user-id / x-first-name / x-last-name / x-email
+      // headers. Your backend now derives profile fields from Clerk's API via
+      // fetch_clerk_profile() (see /me), so this call just needs a valid
+      // token — no profile fields need to travel as headers anymore.
+      await apiFetch('/me', getToken)
 
       setProfileStatus({ type: 'success', message: 'Profile updated.' })
     } catch (err) {
@@ -85,10 +125,8 @@ export default function SettingsPage() {
     if (!userId) return
     setReindexStatus({ type: 'saving' })
     try {
-      const res = await fetch(`${API_URL}/ai/reindex`, {
-        method: 'POST',
-        headers: { 'x-user-id': userId },
-      })
+      // CHANGED: was fetch with headers: { 'x-user-id': userId }
+      const res = await apiFetch('/ai/reindex', getToken, { method: 'POST' })
       if (!res.ok) throw new Error(`Reindex failed (${res.status})`)
       const data = await res.json()
       setReindexStatus({ type: 'success', message: `Indexed ${data.indexed} note(s).` })
@@ -106,10 +144,22 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[#f7f5f0]">
       <div className="max-w-3xl mx-auto px-8 py-12">
         <header className="mb-10">
-          <h2 className="text-4xl font-bold text-stone-800 tracking-tight">Settings</h2>
-          <p className="text-sm text-neutral-500 mt-1">
-            Manage your profile, appearance, and notes data.
-          </p>
+          <Link
+            href="/notes"
+            className="inline-flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-700 transition-colors mb-6 group"
+          >
+            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+            All notes
+          </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-4xl font-bold text-stone-800 tracking-tight">Settings</h2>
+              <p className="text-sm text-neutral-500 mt-1">
+                Manage your profile, sessions, and notes data.
+              </p>
+            </div>
+            <SignOutMenu />
+          </div>
         </header>
 
         <div className="flex flex-col gap-6">
@@ -195,38 +245,68 @@ export default function SettingsPage() {
             </form>
           </section>
 
-          {/* Appearance */}
+          {/* NEW: Sessions / devices */}
           <section className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              {darkMode ? (
-                <Moon className="w-4 h-4 text-green-700" />
-              ) : (
-                <Sun className="w-4 h-4 text-green-700" />
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Monitor className="w-4 h-4 text-green-700" />
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+                  Sessions
+                </h3>
+              </div>
+              {sessions.length > 1 && (
+                <button
+                  onClick={handleSignOutOtherDevices}
+                  disabled={revokingId === 'all'}
+                  className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                >
+                  {revokingId === 'all' ? 'Signing out…' : 'Sign out of all other devices'}
+                </button>
               )}
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                Appearance
-              </h3>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-stone-800">Dark mode</p>
-                <p className="text-xs text-stone-400 mt-0.5">Easier on the eyes at night.</p>
-              </div>
-              <button
-                onClick={toggleDarkMode}
-                aria-pressed={darkMode}
-                className={`relative w-11 h-6 rounded-full transition-colors ${
-                  darkMode ? 'bg-green-700' : 'bg-stone-300'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                    darkMode ? 'translate-x-5' : ''
-                  }`}
-                />
-              </button>
-            </div>
+            {sessionsLoading ? (
+              <p className="text-sm text-stone-400">Loading sessions…</p>
+            ) : sessions.length === 0 ? (
+              <p className="text-sm text-stone-400">No active sessions found.</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-stone-100">
+                {sessions.map((session) => {
+                  const activity = session.latestActivity
+                  const isCurrent = session.id === sessionId
+                  return (
+                    <li key={session.id} className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                          {activity?.browserName ?? 'Unknown browser'}
+                          {activity?.deviceType ? ` · ${activity.deviceType}` : ''}
+                          {isCurrent && (
+                            <span className="text-[10px] font-medium bg-green-50 text-green-700 px-2 py-0.5 rounded-full">
+                              This device
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          {[activity?.city, activity?.country].filter(Boolean).join(', ') || 'Unknown location'}
+                          {session.lastActiveAt
+                            ? ` · Last active ${new Date(session.lastActiveAt).toLocaleString()}`
+                            : ''}
+                        </p>
+                      </div>
+                      {!isCurrent && (
+                        <button
+                          onClick={() => handleRevoke(session)}
+                          disabled={revokingId === session.id}
+                          className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50 shrink-0"
+                        >
+                          {revokingId === session.id ? 'Signing out…' : 'Sign out'}
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </section>
 
           {/* Notes data / AI index */}
@@ -277,11 +357,9 @@ export default function SettingsPage() {
                   Permanently deletes your account and all your notes. This can't be undone.
                 </p>
               </div>
-              <DeleteUser
-                userId={userId}
-                signOut={signOut}
-                onDeleted={() => router.push('/')}
-              />
+              {/* CHANGED: DeleteUser now pulls userId/getToken/signOut from
+                  useAuth() internally — no longer takes them as props. */}
+              <DeleteUser onDeleted={() => router.push('/')} />
             </div>
           </section>
         </div>

@@ -5,11 +5,13 @@ from sqlalchemy.orm import Session
 import crud
 import models
 import rag
-from auth import get_current_user_id, fetch_clerk_profile  # CHANGED: was a local Header-based function
+from agent import run_agent_turn
+from auth import delete_clerk_user, get_current_user_id, fetch_clerk_profile 
 from database import engine, get_db
 from schemas import (
     MeResponse, NoteCreate, NoteUpdate, NoteResponse, UserListResponse,
     AIQueryRequest, AIQueryResponse, AIReindexResponse,
+    ChatRequest, ChatResponse, ChatHistoryResponse, ChatMessageOut,
 )
 
 models.Base.metadata.create_all(bind=engine)
@@ -33,10 +35,12 @@ def get_db_user(
     profile = fetch_clerk_profile(clerk_user_id)
     return crud.get_or_create_app_user(db, clerk_user_id, profile)
 
+
 def require_manager(user: models.AppUser = Depends(get_db_user)) -> models.AppUser:
     if user.role != "manager":
         raise HTTPException(status_code=403, detail="Managers only.")
     return user
+
 
 @app.get("/me", response_model=MeResponse, response_model_by_alias=True)
 def read_me(
@@ -59,6 +63,7 @@ def read_me(
         first_name=user.first_name,
         last_name=user.last_name,
         email=user.email,
+        last_note_id=user.last_open_note_id, 
     )
 
 
@@ -92,11 +97,30 @@ def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
 
 
+
+@app.delete("/users/{target_user_id}", status_code=204)
+def delete_user(
+    target_user_id: str,
+    user: models.AppUser = Depends(require_manager),
+    db: Session = Depends(get_db),
+):
+    deleted = crud.delete_user(db, target_user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")
+
+
 @app.delete("/me", status_code=204)
 def delete_me(
     user: models.AppUser = Depends(get_db_user),
     db: Session = Depends(get_db),
 ):
+    try:
+        delete_clerk_user(user.clerk_user_id)
+    except Exception:
+        raise HTTPException(
+            status_code=502, detail="Failed to delete account with auth provider"
+        )
+
     crud.delete_user(db, user.clerk_user_id)
 
 
@@ -123,42 +147,70 @@ def list_notes(
 
 
 @app.get("/notes/{note_id}", response_model=NoteResponse, response_model_by_alias=True)
-def get_note(
+def get_note_for_user(
     note_id: int,
     db: Session = Depends(get_db),
     user: models.AppUser = Depends(get_db_user),
 ):
-    note = crud.get_note(db, note_id)
-    if not note or note.user_id != user.clerk_user_id:
+    
+    note = crud.get_note_for_user(db, note_id, user.clerk_user_id)
+    if note is None:
         raise HTTPException(status_code=404, detail="Note not found")
+
+    crud.update_last_open_note(db, user, note.id)
+
     return note
 
-
 @app.patch("/notes/{note_id}", response_model=NoteResponse, response_model_by_alias=True)
-def update_note(
+def update_note_for_user(
     note_id: int,
     data: NoteUpdate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: models.AppUser = Depends(get_db_user),
 ):
-    note = crud.get_note(db, note_id)
+    note = crud.get_note_for_user(db, note_id, user.clerk_user_id)
     if not note or note.user_id != user.clerk_user_id:
         raise HTTPException(status_code=404, detail="Note not found")
-    updated = crud.update_note(db, note_id, data)
-    background_tasks.add_task(rag.upsert_note_embedding_by_id, note_id)
+
+    updated = crud.update_note_for_user(
+        db,
+        note_id,
+        user.clerk_user_id,
+        data,
+    )
+
+    if updated is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found",
+        )
+
+    background_tasks.add_task(
+        rag.upsert_note_embedding_by_id,
+        note_id,
+    )
+
     return updated
 
 @app.delete("/notes/{note_id}", status_code=204)
-def delete_note(
+def delete_note_for_user(
     note_id: int,
     db: Session = Depends(get_db),
     user: models.AppUser = Depends(get_db_user),
 ):
-    note = crud.get_note(db, note_id)
-    if not note or note.user_id != user.clerk_user_id:
-        raise HTTPException(status_code=404, detail="Note not found")
-    crud.delete_note(db, note_id)
+
+    deleted = crud.delete_note_for_user(
+        db,
+        note_id,
+        user.clerk_user_id,
+    )
+
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found",
+        )
 
 
 # AI / RAG
@@ -179,3 +231,30 @@ def ai_reindex(
 ):
     count = rag.reindex_all_notes(db, user_id=user.clerk_user_id)
     return AIReindexResponse(indexed=count)
+
+
+# tool-calling assistant chat. Separate from /ai/query above (which stays a one-shot RAG endpoint); this one can create, list, update, and delete notes via tools.py
+
+@app.post("/ai/chat", response_model=ChatResponse)
+def ai_chat(
+    data: ChatRequest,
+    db: Session = Depends(get_db),
+    user: models.AppUser = Depends(get_db_user),
+):
+    answer = run_agent_turn(db, user.clerk_user_id, data.message)
+    return ChatResponse(answer=answer)
+
+
+# chat_messages already persisted every turn via memory.py 
+@app.get("/ai/chat/history", response_model=ChatHistoryResponse)
+def get_chat_history_route(
+    db: Session = Depends(get_db),
+    user: models.AppUser = Depends(get_db_user),
+):
+    rows = crud.get_chat_history_for_display(db, user.clerk_user_id, limit=50)
+    return ChatHistoryResponse(
+        messages=[
+            ChatMessageOut(role=r.role, content=r.content, created_at=r.created_at)
+            for r in rows
+        ]
+    )

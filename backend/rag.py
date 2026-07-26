@@ -156,6 +156,13 @@ def search_similar_chunks(db: Session, user_id: str, question: str, k: int = TOP
     )
 
 
+def get_relevant_note_excerpts(
+    db: Session, user_id: str, query: str, k: int = TOP_K_CHUNKS
+) -> list[dict]:
+    chunks = search_similar_chunks(db, user_id, query, k=k)
+    return [{"note_id": c.note_id, "content": c.content} for c in chunks]
+
+
 PROMPT_TEMPLATE = """You are a helpful assistant that answers questions using ONLY the excerpts from the user's own notes below.
 If the excerpts don't contain enough information to answer, say "I couldn't find anything in your notes about that."
 Don't make anything up. Keep the answer concise.

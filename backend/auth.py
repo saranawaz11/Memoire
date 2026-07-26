@@ -7,10 +7,6 @@ CLERK_SECRET_KEY = os.environ["CLERK_SECRET_KEY"]
 # getting AUTHROIZED_PARTIES from env variable
 AUTHORIZED_PARTIES = os.environ.get("CLERK_AUTHORIZED_PARTIES")
 
-# AUTHORIZED_PARTIES = os.environ.get(
-#     "CLERK_AUTHORIZED_PARTIES", "http://localhost:3000"
-# ).split(",")
-
 clerk = Clerk(bearer_auth=CLERK_SECRET_KEY)
 
 def get_current_user_id(request: Request) -> str:
@@ -38,3 +34,7 @@ def fetch_clerk_profile(user_id: str) -> dict:
         "last_name": clerk_user.last_name,
         "email": email,
     }
+
+def delete_clerk_user(user_id: str) -> None:
+    #De letes the account on Clerk's side, not just your local DB row. 
+    clerk.users.delete(user_id=user_id)
