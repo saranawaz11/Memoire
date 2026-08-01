@@ -21,7 +21,7 @@ class AppUser(Base):
     joined_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_open_note_id = Column(Integer, nullable=True)
     last_opened_at = Column(DateTime(timezone=True), nullable=True)
-
+    pending_delete_note_id = Column(Integer, nullable=True)
 
 class Note(Base):
     __tablename__ = "notes"

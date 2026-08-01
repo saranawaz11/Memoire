@@ -3,10 +3,38 @@ from langchain_core.messages import HumanMessage
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+import re
 import rag
+import crud
 from tools import build_note_tools
 from memory import get_session_history
+
+_Mutation_PREFIXES = ["Created note #", "Updated note #", "Deleted note #"]
+
+def _turn_changed_notes(messages:list) -> bool:
+    return any(
+        isinstance(m, ToolMessage)
+        and isinstance(m.content, str)
+        and m.content.startswith(tuple(_Mutation_PREFIXES))
+        for m in messages
+    )
+
+
+# --- Delete confirmation, handled server-side, not by the LLM -------------
+#
+# The model reliably asks a confirmation question with the note's ID in it
+# (the system prompt already requires stating IDs explicitly), but it does
+# NOT reliably call delete_note again on the next turn's bare "yes" reply —
+# it tends to just narrate "Deleted note #X" without invoking anything.
+# Since that's a destructive action, we don't leave it to chance: we parse
+# the model's own confirmation question to learn which note_id is pending,
+# store it on AppUser, and on the next turn perform the actual deletion in
+# code if the reply looks affirmative — no LLM tool call involved in the
+# mutation itself.
+_CONFIRM_QUESTION_RE = re.compile(r"delete note #(\d+)", re.IGNORECASE)
+_AFFIRMATIVE_RE = re.compile(r"^\s*(yes|yeah|yep|yup|sure|confirm|confirmed|ok|okay|go ahead|do it)\b", re.IGNORECASE)
+_NEGATIVE_RE = re.compile(r"^\s*(no|nope|nah|cancel|don'?t|do not|stop|wait)\b", re.IGNORECASE)
 
 
 class SearchNotesArgs(BaseModel):
@@ -47,7 +75,10 @@ Rules:
 - Always use search_notes before answering any question about the content
   of the user's notes. Never guess or fabricate note content.
 - If deleting a note, and there's any ambiguity about which note the user
-  means, ask them to confirm first rather than guessing.
+  means, ask them to confirm first rather than guessing. Phrase the
+  confirmation question EXACTLY like this, including the note's ID:
+  "Delete note #<id>: <title>? (yes/no)" — this exact phrasing is required,
+  don't reword it.
 - IMPORTANT — avoiding duplicate notes: if the user asks to add to, change,
   or describe "the note," "it," or "that" without a clear ID, this almost
   always means UPDATE an existing note, not create a new one. Before
@@ -68,13 +99,39 @@ Rules:
 - Be concise. This is a notes app, not a chat platform — keep responses short."""
 
 
-def run_agent_turn(db: Session, user_id: str, message: str) -> str:
+def run_agent_turn(db: Session, user_id: str, message: str) -> dict:
     # from @app.post("/ai/chat", response_model=ChatResponse)
-    tools = build_note_tools(db, user_id) + [_build_search_tool(db, user_id)]
+    user = crud.get_app_user(db, user_id)
     history = get_session_history(db, user_id)
-    
-    #create agent uses flat line message reponse 
-    # so connecting AIMessage and HumanMessage?
+
+    # handle a pending delete confirmation, if any 
+    if user and user.pending_delete_note_id is not None:
+        pending_id = user.pending_delete_note_id
+
+        if _AFFIRMATIVE_RE.match(message):
+            crud.clear_pending_delete(db, user)
+            deleted = crud.delete_note_for_user(db, pending_id, user_id)
+            answer = (
+                f"Deleted note #{pending_id}."
+                if deleted
+                else f"No note found with id {pending_id}."
+            )
+            history.add_message(HumanMessage(content=message))
+            history.add_message(AIMessage(content=answer))
+            return {"answer": answer, "notes_changed": bool(deleted)}
+
+        if _NEGATIVE_RE.match(message):
+            crud.clear_pending_delete(db, user)
+            answer = "Okay, I won't delete that note."
+            history.add_message(HumanMessage(content=message))
+            history.add_message(AIMessage(content=answer))
+            return {"answer": answer, "notes_changed": False}
+
+        crud.clear_pending_delete(db, user)
+
+    # Step 2: normal agent turn
+    tools = build_note_tools(db, user_id) + [_build_search_tool(db, user_id)]
+
     agent = create_agent(
         model=rag.get_llm(),
         tools=tools,
@@ -88,7 +145,26 @@ def run_agent_turn(db: Session, user_id: str, message: str) -> str:
     answer = result["messages"][-1].content
 
     new_messages = result["messages"][len(prior_messages):]
+
+    # DEBUG: trace this turn
+    print("=" * 60)
+    print(f"[AGENT TRACE] user_id={user_id!r} message={message!r}")
+    for i, m in enumerate(new_messages):
+        print(
+            f"  [{i}] {type(m).__name__} "
+            f"tool_calls={getattr(m, 'tool_calls', None)!r} "
+            f"content={str(getattr(m, 'content', ''))[:200]!r}"
+        )
+    print("=" * 60)
+
+    notes_changed = _turn_changed_notes(new_messages)
     for m in new_messages:
         history.add_message(m)
 
-    return answer
+    # Step 3: if this turn's answer IS a delete confirmation question
+    if user:
+        match = _CONFIRM_QUESTION_RE.search(answer)
+        if match:
+            crud.set_pending_delete(db, user, int(match.group(1)))
+
+    return {"answer": answer, "notes_changed": notes_changed}

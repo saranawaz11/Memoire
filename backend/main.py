@@ -241,8 +241,9 @@ def ai_chat(
     db: Session = Depends(get_db),
     user: models.AppUser = Depends(get_db_user),
 ):
-    answer = run_agent_turn(db, user.clerk_user_id, data.message)
-    return ChatResponse(answer=answer)
+    result = run_agent_turn(db, user.clerk_user_id, data.message)
+    return ChatResponse(answer=result["answer"], notes_changed=result["notes_changed"])
+
 
 
 # chat_messages already persisted every turn via memory.py 

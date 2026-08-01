@@ -77,6 +77,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
+    notes_changed: bool = False
 
 
 class ChatMessageOut(BaseModel):

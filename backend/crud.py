@@ -179,6 +179,17 @@ def update_last_open_note(
     db.commit()
 
 
+def set_pending_delete(db: Session, user: AppUser, note_id: int) -> None:
+    user.pending_delete_note_id = note_id
+    db.commit()
+
+
+def clear_pending_delete(db: Session, user: AppUser) -> None:
+    if user.pending_delete_note_id is not None:
+        user.pending_delete_note_id = None
+        db.commit()
+
+
 # Chat history, used by memory.py for the notes assistant
 def add_chat_message(
     db: Session,

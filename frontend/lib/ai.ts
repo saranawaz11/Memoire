@@ -67,6 +67,7 @@ export async function reindexNotes(
 // verified token.
 export interface ChatResponse {
   answer: string;
+  notes_changed: boolean;
 }
 
 export async function chatWithAI(

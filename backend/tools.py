@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 import crud
 from schemas import NoteCreate, NoteUpdate
-
+import rag
 
 # Argument schemas — these define exactly what the LLM is allowed to supply.
 
@@ -59,6 +59,7 @@ def build_note_tools(db: Session, user_id: str) -> list[StructuredTool]:
                 NoteCreate(title=title, content=content, tags=tags),
                 user_id,
             )
+            rag.upsert_note_embedding_by_id(note.id)
         except Exception as e:
             return f"Failed to create note: {e}"
         return f"Created note #{note.id}: {note.title}"
@@ -88,6 +89,8 @@ def build_note_tools(db: Session, user_id: str) -> list[StructuredTool]:
         note = crud.update_note_for_user(db, note_id, user_id, update)
         if note is None:
             return f"No note found with id {note_id}."
+        if title is not None or content is not None or tags is not None:
+            rag.upsert_note_embedding_by_id(note.id)
         return f"Updated note #{note.id}: {note.title}"
 
     def delete_note(note_id: int) -> str:
