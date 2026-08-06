@@ -1,0 +1,1152 @@
+/*
+  Fonts are loaded via <link> tags in app/layout.tsx (head), not @import
+  here — @import of external font URLs inside a CSS Module is unreliable
+  in Next.js and is why the icons were rendering as plain text.
+*/
+
+:root {
+  --secondary-fixed: #f2e0c8;
+  --surface-container-lowest: #ffffff;
+  --on-tertiary-fixed: #2c1600;
+  --on-error-container: #93000a;
+  --surface-bright: #fcf9f0;
+  --primary-container: #1b3022;
+  --surface-container: #f1eee5;
+  --on-secondary-fixed: #231a0c;
+  --on-primary-fixed-variant: #364c3c;
+  --inverse-primary: #b4cdb8;
+  --on-tertiary: #ffffff;
+  --on-error: #ffffff;
+  --surface-dim: #dddad1;
+  --on-primary: #ffffff;
+  --tertiary-container: #422401;
+  --inverse-surface: #31312b;
+  --primary: #061b0e;
+  --error-container: #ffdad6;
+  --on-secondary-fixed-variant: #504534;
+  --error: #ba1a1a;
+  --tertiary-fixed: #ffdcbd;
+  --on-background: #1c1c17;
+  --on-secondary-container: #6f6350;
+  --on-tertiary-container: #b7895b;
+  --surface-tint: #4d6453;
+  --on-primary-fixed: #0b2013;
+  --inverse-on-surface: #f4f1e8;
+  --on-primary-container: #819986;
+  --secondary-fixed-dim: #d5c4ad;
+  --surface-container-high: #ebe8df;
+  --on-surface-variant: #434843;
+  --secondary-container: #f2e0c8;
+  --tertiary: #261200;
+  --surface-container-low: #f6f3ea;
+  --secondary: #695d4a;
+  --surface-container-highest: #e5e2da;
+  --primary-fixed-dim: #b4cdb8;
+  --background: #fcf9f0;
+  --surface: #fcf9f0;
+  --outline: #737973;
+  --on-surface: #1c1c17;
+  --on-tertiary-fixed-variant: #623f18;
+  --surface-variant: #e5e2da;
+  --primary-fixed: #d0e9d4;
+  --outline-variant: #c3c8c1;
+  --tertiary-fixed-dim: #f0bd8b;
+  --on-secondary: #ffffff;
+
+  --font-body: 'Source Serif 4', serif;
+  --font-display: 'Playfair Display', serif;
+  --font-label: 'Work Sans', sans-serif;
+}
+
+/*
+  Material Symbols renders as literal text ("search", "person", etc.)
+  until this is set: the font loading alone isn't enough, the glyphs
+  need font-variation-settings to switch from the ligature name to the
+  icon shape, plus a fixed font-size/line-height so they don't stretch.
+*/
+.page :global(.material-symbols-outlined) {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.page {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+  overscroll-behavior: none;
+
+  /* The root layout puts <body> in a flex column with overflow: hidden,
+     so this page has to be the thing that scrolls: take the remaining
+     flex space and manage its own vertical scroll. */
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  /* Hide the scrollbar itself (Firefox + IE/Edge) */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Hide the scrollbar itself (WebKit: Chrome, Safari, Edge Chromium) */
+.page::-webkit-scrollbar {
+  display: none;
+}
+
+.page * {
+  box-sizing: border-box;
+}
+
+/* ---------- Header ---------- */
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background-color: rgba(252, 249, 240, 0.2);
+  backdrop-filter: blur(24px);
+  z-index: 40;
+  padding: 0 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.searchWrap {
+  flex: 1;
+  max-width: 36rem;
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-container);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  border: 1px solid var(--outline-variant);
+}
+
+.searchIcon {
+  color: var(--on-surface-variant);
+  margin-right: 8px;
+  font-family: 'Material Symbols Outlined';
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 16px;
+  font-family: var(--font-body);
+  color: var(--on-surface);
+}
+
+.searchInput::placeholder {
+  color: rgba(67, 72, 67, 0.5);
+}
+
+.headerBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.headerLogo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.headerBrandName {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.signInBtn {
+  background: transparent;
+  border: none;
+  padding: 8px 4px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.signInBtn:hover {
+  color: var(--primary);
+}
+
+.joinBtn {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 24px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.joinBtn:hover {
+  background-color: var(--on-primary-fixed-variant);
+}
+
+.joinBtn:active {
+  transform: scale(0.97);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background-color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.avatarIcon {
+  color: var(--on-primary);
+  font-size: 20px;
+  font-family: 'Material Symbols Outlined';
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 0 20px;
+  }
+
+  .headerBrandName {
+    font-size: 16px;
+  }
+
+  .headerActions {
+    gap: 10px;
+  }
+
+  .signInBtn {
+    font-size: 11px;
+  }
+
+  .joinBtn {
+    padding: 8px 16px;
+    font-size: 11px;
+  }
+}
+
+/* ---------- Layout ---------- */
+
+.main {
+  position: relative;
+  padding-top: 80px;
+  min-height: 100vh;
+}
+
+.flowRoot {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+}
+
+.fadeSection {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fadeSection.inView,
+.fadeSectionAlways {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  position: relative;
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 64px;
+}
+
+.heroBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.heroBgImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.85) contrast(1.1);
+}
+
+.heroGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(6, 27, 14, 0.3), transparent, var(--background));
+}
+
+.heroContent {
+  position: relative;
+  z-index: 10;
+  max-width: 56rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.eyebrow {
+  font-family: var(--font-label);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  color: var(--secondary-fixed);
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  display: block;
+}
+
+.heroTitle {
+  font-family: var(--font-display);
+  font-size: 64px;
+  line-height: 1.1;
+  color: var(--surface-container-lowest);
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.2));
+  font-weight: 700;
+  margin: 0;
+}
+
+.heroTitleItalic {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.heroSubtitle {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 28px;
+  color: rgba(252, 249, 240, 0.9);
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.heroCtaWrap {
+  padding-top: 24px;
+}
+
+.primaryBtn {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  padding: 16px 40px;
+  border-radius: 9999px;
+  border: none;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 auto;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.primaryBtn:hover {
+  background-color: var(--on-primary-fixed-variant);
+}
+
+.heroDecor {
+  position: absolute;
+  bottom: -64px;
+  left: -64px;
+  width: 24rem;
+  height: 24rem;
+  opacity: 0.8;
+  pointer-events: none;
+  user-select: none;
+}
+
+.heroDecorImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: rotate(12deg);
+}
+
+/* ---------- Generic Section ---------- */
+
+.section {
+  padding: 128px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.sectionBg {
+  background-color: var(--background);
+}
+
+.sectionBgLow {
+  background-color: var(--surface-container-low);
+}
+
+.sectionBgPrimary {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.sectionBgHigh {
+  background-color: var(--surface-container-high);
+  border-top: 1px solid var(--outline-variant);
+}
+
+.sectionInner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 64px;
+}
+
+.sectionInnerNarrow {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 64px;
+}
+
+.sectionInnerNarrower {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 0 64px;
+}
+
+/* ---------- Neural Ink Digitization ---------- */
+
+.twoColGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 96px;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .twoColGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.textBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.rule {
+  width: 48px;
+  height: 1px;
+  background-color: var(--primary);
+}
+
+.headlineLg {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.bodyLgMuted {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-top: 12px;
+}
+
+.statCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.statNumber {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--primary);
+}
+
+.statLabel {
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--secondary);
+  text-transform: uppercase;
+}
+
+.statDivider {
+  width: 1px;
+  height: 48px;
+  background-color: var(--outline-variant);
+}
+
+.revealBox {
+  position: relative;
+  cursor: ew-resize;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  aspect-ratio: 4 / 5;
+}
+
+@media (min-width: 1024px) {
+  .revealBox {
+    aspect-ratio: 1 / 1;
+  }
+}
+
+.revealBase {
+  position: absolute;
+  inset: 0;
+  background-color: var(--surface-container-high);
+}
+
+.revealBaseImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.revealHandle {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-left: 2px solid var(--primary);
+  z-index: 20;
+  transition: all 75ms ease;
+}
+
+.revealHandleDot {
+  position: absolute;
+  top: 50%;
+  left: -16px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background-color: var(--primary);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-primary);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+}
+
+.revealOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  width: 50%;
+  overflow: hidden;
+  border-right: 1px solid rgba(11, 32, 19, 0.2);
+}
+
+.revealOverlayImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------- Heritage Vault ---------- */
+
+.vaultInner {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 64px;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+
+.waxSealWrap {
+  margin-bottom: 48px;
+}
+
+.waxSeal {
+  width: 192px;
+  height: 192px;
+  margin: 0 auto;
+  transition: transform 0.3s ease-out;
+  cursor: pointer;
+}
+
+.waxSeal:hover {
+  transform: scale(1.1);
+}
+
+/* ---------- Vault Seal (glow + frame + inset lines + tilt) ---------- */
+
+.vaultSealWrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0;
+}
+
+.vaultSealGlow {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(252, 249, 240, 0.15);
+  filter: blur(80px);
+  border-radius: 9999px;
+  transform: scale(1.1);
+  pointer-events: none;
+}
+
+.vaultSealFrame {
+  position: relative;
+  cursor: pointer;
+  width: 240px;
+  height: 240px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(252, 249, 240, 0.06);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  overflow: hidden;
+}
+
+/* the frame lines */
+.vaultSealInsetBorder {
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.vaultSealImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.3));
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+.vaultSealBadge {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 48px;
+  height: 48px;
+  background-color: var(--tertiary-fixed-dim);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--on-tertiary-fixed-variant);
+}
+
+.vaultSealBadgeIcon {
+  color: var(--on-tertiary-fixed);
+  font-size: 20px;
+}
+
+.vaultTitle {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.vaultSubtitle {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--on-primary-container);
+  max-width: 42rem;
+  margin: 0 auto 48px;
+}
+
+.vaultGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  text-align: left;
+}
+
+@media (min-width: 768px) {
+  .vaultGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.vaultCard {
+  padding: 32px;
+  background-color: rgba(27, 48, 34, 0.3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(54, 76, 60, 0.2);
+}
+
+.vaultIcon {
+  color: var(--tertiary-fixed);
+  font-size: 32px;
+  font-family: 'Material Symbols Outlined';
+}
+
+.vaultCardTitle {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.vaultCardBody {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--on-primary-container);
+  margin: 0;
+}
+
+.textureLayer {
+  position: absolute;
+  inset: 0;
+  opacity: 0.1;
+  pointer-events: none;
+  background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+}
+
+/* ---------- Cartography of Thought ---------- */
+
+.cartographyFlex {
+  display: flex;
+  flex-direction: column;
+  gap: 96px;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .cartographyFlex {
+    flex-direction: row;
+  }
+}
+
+.cartographyText {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .cartographyText {
+    width: 33.333%;
+  }
+}
+
+.eyebrowMuted {
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.headlineLgTight {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.linkBtn {
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: none;
+  border: none;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 4px;
+  cursor: pointer;
+  color: var(--on-surface);
+  align-self: flex-start;
+  transition: color 0.2s ease;
+}
+
+.linkBtn:hover {
+  color: var(--secondary);
+}
+
+.mapPanel {
+  position: relative;
+  height: 600px;
+  width: 100%;
+  border-radius: 16px;
+  background-color: var(--surface-container-highest);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--outline-variant);
+}
+
+@media (min-width: 1024px) {
+  .mapPanel {
+    width: 66.666%;
+  }
+}
+
+.mapSvg {
+  width: 100%;
+  height: 100%;
+  opacity: 0.6;
+}
+
+.mapBgPhoto {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+}
+
+.mapQuoteWrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapQuoteCard {
+  padding: 32px;
+  background-color: rgba(252, 249, 240, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  max-width: 24rem;
+}
+
+.mapQuoteText {
+  font-style: italic;
+  color: var(--primary);
+  font-family: var(--font-body);
+  margin: 0;
+}
+
+/* ---------- Ritual of Correspondence ---------- */
+
+.ritualInner {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 0 64px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.ritualGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  text-align: left;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .ritualGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ritualImgWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  aspect-ratio: 3 / 4;
+}
+
+.ritualImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s ease;
+}
+
+.ritualImgWrap:hover .ritualImg {
+  transform: scale(1.05);
+}
+
+.ritualImgGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(6, 27, 14, 0.4), transparent);
+}
+
+.ritualImgCaption {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  color: var(--on-primary);
+}
+
+.ritualImgEyebrow {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.ritualImgTitle {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ritualTextCol {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ritualTextTitle {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.ritualList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ritualListItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+
+.checkIcon {
+  color: var(--primary);
+  font-family: 'Material Symbols Outlined';
+}
+
+.ritualDecor {
+  position: absolute;
+  top: 50%;
+  right: -96px;
+  width: 20rem;
+  height: 20rem;
+  opacity: 0.6;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+/* ---------- Final CTA ---------- */
+
+.ctaInner {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0 64px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.ctaTitle {
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--primary);
+  font-style: italic;
+  margin: 0;
+}
+
+.ctaSubtitle {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+.ctaBtnRow {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .ctaBtnRow {
+    flex-direction: row;
+  }
+}
+
+.secondaryBtn {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 16px 40px;
+  border-radius: 9999px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.secondaryBtn:hover {
+  background-color: var(--surface-container);
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  padding: 48px 0;
+  background-color: var(--background);
+  border-top: 1px solid var(--outline-variant);
+}
+
+.footerInner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  .footerInner {
+    flex-direction: row;
+  }
+}
+
+.footerBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footerLogo {
+  height: 32px;
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.footerCopy {
+  font-family: var(--font-label);
+  color: var(--on-surface-variant);
+  opacity: 0.6;
+}
+
+.footerLinks {
+  display: flex;
+  gap: 32px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.footerLinks a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footerLinks a:hover {
+  color: var(--primary);
+}

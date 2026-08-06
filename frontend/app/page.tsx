@@ -183,7 +183,8 @@
 
 import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
-import HomeMarketing from './components/HomeMarketing'
+import Home from './home/page'
+// import HomeMarketing from './components/HomeMarketing'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000'
 
@@ -194,7 +195,8 @@ export default async function HomePage() {
     // Signed-out visitors see your marketing page — no redirect, no flash
     // of anything else. This server component decides that *before*
     // rendering, so a signed-in user never sees this even for a frame.
-    return <HomeMarketing />
+    // return <HomeMarketing />
+    return <Home/>
   }
 
   const token = await getToken()

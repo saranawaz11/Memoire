@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.2",
+    "@clerk/types": "^4.101.26",
     "@tiptap/core": "^3.26.0",
     "@tiptap/extension-highlight": "^3.26.0",
     "@tiptap/extension-placeholder": "^3.26.0",
