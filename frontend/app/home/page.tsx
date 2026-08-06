@@ -138,10 +138,10 @@ export default function Home() {
             <>
 
             
-                <Button size="lg" className={styles.signInBtn} onClick={() => {router.push("/sign-in")}}>
+                <Button size="lg" className={styles.signInBtn} onClick={() => {router.push("/sign-up")}}>
                   Join the Guild
                 </Button>
-                <Button className={styles.joinBtn} onClick={() => {router.push("/sign-up")}}>
+                <Button className={styles.joinBtn} onClick={() => {router.push("/sign-in")}}>
                   Get started
                 </Button>
             </>

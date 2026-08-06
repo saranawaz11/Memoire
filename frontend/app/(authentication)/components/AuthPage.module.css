@@ -1,0 +1,459 @@
+/* ---------------------------------------------------------
+   Mémoire — sign-up page (Clerk <SignUp /> themed via
+   appearance.elements). Palette pulled from the brand's
+   existing tailwind tokens: paper #fcf9f0, ink green
+   #061b0e / #1b3022, gilt tan #f0bd8b, aged brown #261200.
+--------------------------------------------------------- */
+
+.page {
+  --paper: #fcf9f0;
+  --ink: #1c1c17;
+  --ink-soft: #434843;
+  --green-deep: #1b3022;
+  --green-darkest: #061b0e;
+  --gilt: #f0bd8b;
+  --hairline: #c3c8c1;
+  --sprig-stem: #7c8a6f;
+  --sprig-bud: #9c7a9e;
+  --leaf-fill: #b7895b;
+  --leaf-vein: #623f18;
+
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse at 20% 15%, rgba(178, 158, 110, 0.1), transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgba(98, 63, 24, 0.08), transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/></svg>");
+  font-family: var(--font-source-serif, serif);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------- Page header ---------------- */
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 24px;
+  z-index: 10;
+}
+
+.wordmark {
+  font-family: var(--font-work-sans, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--green-deep);
+}
+
+/* ---------------- Layout ---------------- */
+
+.main {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  z-index: 5;
+}
+
+.cardWrap {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ---------------- Wax seal (sits on the card's top edge) ---------------- */
+
+.seal {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 32% 28%, #3a5642, var(--green-deep) 55%, var(--green-darkest) 100%);
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.15),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.35),
+    0 6px 14px rgba(6, 27, 14, 0.35);
+}
+
+.sealLetter {
+  font-family: var(--font-playfair, serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gilt);
+  transform: translateY(-1px);
+}
+
+/* ---------------- Clerk root / card ---------------- */
+
+.rootBox {
+  width: 100%;
+}
+
+.card {
+  width: 100%;
+  background: #fffdf7 !important;
+  border: 1px solid rgba(180, 160, 120, 0.35) !important;
+  border-radius: 0 !important;
+  box-shadow:
+    0 2px 4px rgba(38, 18, 0, 0.06),
+    0 24px 60px rgba(38, 18, 0, 0.12) !important;
+  padding: 46px 40px 32px !important;
+  position: relative;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(180, 160, 120, 0.4);
+  pointer-events: none;
+}
+
+.clerkHeader {
+  text-align: center;
+  margin-bottom: 30px !important;
+}
+
+.title {
+  font-family: var(--font-playfair, serif) !important;
+  font-size: 28px !important;
+  line-height: 1.2 !important;
+  font-weight: 600 !important;
+  color: var(--green-deep) !important;
+}
+
+.subtitle {
+  font-family: var(--font-source-serif, serif) !important;
+  font-style: italic;
+  font-size: 14px !important;
+  color: var(--ink-soft) !important;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------------- Social buttons ---------------- */
+
+.socialButton {
+  border: 1px solid var(--hairline) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+  font-family: var(--font-work-sans, sans-serif) !important;
+  font-size: 12px !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 11px 16px !important;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.socialButton:hover {
+  border-color: var(--green-deep) !important;
+  background: rgba(27, 48, 34, 0.04) !important;
+}
+
+.socialButtonText {
+  font-family: var(--font-work-sans, sans-serif) !important;
+  font-weight: 500 !important;
+}
+
+.socialButtonIcon {
+  opacity: 0.85;
+}
+
+/* ---------------- Divider ---------------- */
+
+.dividerRow {
+  margin: 22px 0 !important;
+}
+
+.dividerLine {
+  background: var(--hairline) !important;
+}
+
+.dividerText {
+  font-family: var(--font-work-sans, sans-serif) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft) !important;
+}
+
+/* ---------------- Form fields ---------------- */
+
+.labelRow {
+  margin-bottom: 4px !important;
+}
+
+.label {
+  font-family: var(--font-work-sans, sans-serif) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft) !important;
+  font-weight: 500 !important;
+}
+
+.input {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  border-radius: 0 !important;
+  padding: 8px 2px !important;
+  font-family: var(--font-source-serif, serif) !important;
+  font-size: 16px !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+  transition: border-color 0.25s ease;
+}
+
+.input:focus {
+  border-bottom-color: var(--green-deep) !important;
+  box-shadow: none !important;
+}
+
+.showPasswordButton {
+  color: var(--ink-soft) !important;
+}
+
+.fieldAction {
+  font-family: var(--font-work-sans, sans-serif) !important;
+  font-size: 11px !important;
+  color: var(--green-deep) !important;
+}
+
+.fieldError {
+  font-family: var(--font-source-serif, serif) !important;
+  font-size: 12px !important;
+  color: #8a2d1f !important;
+}
+
+.fieldSuccess {
+  font-family: var(--font-source-serif, serif) !important;
+  font-size: 12px !important;
+  color: var(--green-deep) !important;
+}
+
+.fieldHint {
+  font-family: var(--font-source-serif, serif) !important;
+  font-size: 12px !important;
+  color: var(--ink-soft) !important;
+}
+
+/* ---------------- OTP / verification code ---------------- */
+
+.otpInput {
+  border: none !important;
+  border-bottom: 2px solid var(--hairline) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-family: var(--font-playfair, serif) !important;
+  color: var(--ink) !important;
+}
+
+/* ---------------- Identity preview (email/step chip) ---------------- */
+
+.identityPreview {
+  background: transparent !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 0 !important;
+}
+
+.identityPreviewText {
+  font-family: var(--font-source-serif, serif) !important;
+  color: var(--ink) !important;
+}
+
+.identityPreviewEditButton {
+  color: var(--green-deep) !important;
+}
+
+/* ---------------- Submit button ---------------- */
+
+.submit {
+  border: 1px solid rgba(240, 189, 139, 0.3) !important;
+  border-radius: 0 !important;
+  background: var(--green-deep) !important;
+  color: var(--gilt) !important;
+  font-family: var(--font-work-sans, sans-serif) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 14px 24px !important;
+  box-shadow: none !important;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.submit:hover {
+  background: var(--green-darkest) !important;
+  box-shadow: 0 8px 20px rgba(6, 27, 14, 0.25) !important;
+}
+
+/* ---------------- Footer ---------------- */
+
+.footer {
+  margin-top: 24px !important;
+}
+
+.footerAction {
+  justify-content: center !important;
+}
+
+.footerActionText {
+  font-family: var(--font-source-serif, serif) !important;
+  font-style: italic;
+  font-size: 13px !important;
+  color: var(--ink-soft) !important;
+}
+
+.footerLink {
+  font-family: var(--font-source-serif, serif) !important;
+  font-style: italic;
+  font-size: 13px !important;
+  color: var(--ink-soft) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--hairline) !important;
+  text-underline-offset: 4px;
+}
+
+.footerLink:hover {
+  color: var(--green-deep) !important;
+}
+
+/* ---------------- Postmark ---------------- */
+
+.postmark {
+  position: absolute;
+  bottom: 28px;
+  right: 28px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 2px dashed rgba(6, 27, 14, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  opacity: 0.35;
+  transform: rotate(10deg);
+  pointer-events: none;
+}
+
+.postmark::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(6, 27, 14, 0.3);
+  border-radius: 50%;
+}
+
+.postmark span {
+  font-family: var(--font-work-sans, sans-serif);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.4;
+  color: var(--green-darkest);
+}
+
+/* ---------------- Ambient botanicals ---------------- */
+
+.sprigTopLeft,
+.sprigBottomRight,
+.leafTopRight,
+.leafBottomLeft {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sprigTopLeft {
+  top: -30px;
+  left: 4%;
+  width: 90px;
+  height: 170px;
+  transform: rotate(-18deg);
+  opacity: 0.55;
+}
+
+.sprigBottomRight {
+  bottom: -40px;
+  right: 6%;
+  width: 100px;
+  height: 190px;
+  transform: rotate(200deg);
+  opacity: 0.5;
+}
+
+.leafTopRight {
+  top: 8%;
+  right: -20px;
+  width: 130px;
+  height: 84px;
+  transform: rotate(18deg);
+  opacity: 0.4;
+}
+
+.leafBottomLeft {
+  bottom: 6%;
+  left: -30px;
+  width: 140px;
+  height: 90px;
+  transform: rotate(-24deg);
+  opacity: 0.4;
+}
+
+/* ---------------- Responsive ---------------- */
+
+@media (max-width: 480px) {
+  .card {
+    padding: 40px 24px 28px !important;
+  }
+
+  .title {
+    font-size: 24px !important;
+  }
+
+  .sprigTopLeft,
+  .sprigBottomRight,
+  .leafTopRight,
+  .leafBottomLeft {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+
+  .postmark {
+    display: none;
+  }
+}
+
+/* ---------------- Reduced motion ---------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .submit,
+  .input,
+  .socialButton,
+  .footerLink {
+    transition: none;
+  }
+}

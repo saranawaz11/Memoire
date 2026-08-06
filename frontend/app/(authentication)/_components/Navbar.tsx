@@ -25,7 +25,7 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => signOut({ redirectUrl: "/sign-in" });
+  const handleLogout = () => signOut({ redirectUrl: "/" });
   const initial = user?.firstName?.[0] ?? user?.username?.[0] ?? "U";
   const [searchFocused, setSearchFocused] = useState(false);
   return (
