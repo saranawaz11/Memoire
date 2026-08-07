@@ -42,7 +42,7 @@ export default function RootLayout({
       lang="en"
       className={`${playfair.variable} ${sourceSerif.variable} ${workSans.variable} h-full antialiased`}
     >
-      <body className="h-full flex flex-col overflow-y-auto overflow-x-hidden">
+      <body className="h-full flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
         <ClerkProvider>
           <Toaster position="bottom-right" richColors />
           {children}

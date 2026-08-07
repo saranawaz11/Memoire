@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { useSidebar } from "@/lib/sidebar-context";
-
+import styles from "./Notes.module.css";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 const navItems = [
   { label: "All Notes", href: "/notes", icon: "▤" },
   { label: "Ask AI", href: "/notes/ask-ai", icon: "✦" },
@@ -20,9 +22,10 @@ const Sidebar = () => {
   const handleLogout = () => signOut({ redirectUrl: "/sign-in" });
 
   return (
-    <div className="sidebar h-full flex flex-col">
+    <div className={`${styles.sidebar} sidebar h-full flex flex-col`}>
       <div className="sb-scroll">
         <div className="sb-section-label">Workspace</div>
+        
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (

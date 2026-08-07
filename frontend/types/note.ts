@@ -7,4 +7,5 @@ export type Note = {
     wordCount: number;
     userId?: string;
     createdAt?: string;
+    color?: string;
 };

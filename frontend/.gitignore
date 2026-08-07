@@ -47,3 +47,4 @@ next-env.d.ts
 # files
 HomeStance.tsx
 lib/clerk-appearance.ts
+notes/(authentication)/notes

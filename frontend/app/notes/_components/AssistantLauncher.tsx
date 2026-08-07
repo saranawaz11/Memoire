@@ -2,28 +2,26 @@
 
 // components/assistant-launcher.tsx
 //
-// Global "Onyx" launcher. Drop this once into app/layout.tsx (inside the
-// authenticated part of the tree) and it renders a floating bubble in the
-// bottom-right corner on every page. Clicking it opens a compact chat panel
-// that can create/find/update/delete notes via the same agent that used to
-// live at /assistant.
+// Global "Onyx" launcher, restyled to match Mémoire's old-letters aesthetic:
+// parchment panel, hairline gold rule work, ink-green "wax seal" as the
+// signature element for the bubble and assistant avatar, serif italic
+// voice for the brand name and assistant replies. Functional behaviour
+// (open/close, history load, send flow) is unchanged from the previous
+// version — this pass only touches presentation.
 //
-// Motion direction: the panel opens *from* the bubble (scale + origin at
-// bottom-right, spring) rather than just appearing, so the bubble reads as
-// the panel's handle instead of two unrelated elements. Assistant replies
-// use the same blur-develop reveal as the /ai page's answers, and the send
-// button morphs the same way as the rest of the app's forms — small things,
-// but they're what make Onyx feel like part of the product instead of a
-// bolted-on widget.
-//
-// UI changes beyond animation: assistant messages now get an avatar chip so
-// role is legible without reading color, the bubble has a resting "breathe"
-// so it doesn't look dead when idle, and the typing indicator now matches
-// the dot-bloom used elsewhere instead of a generic bounce.
+// Palette (kept close to Mémoire's own, extended with one new accent):
+//   --ink-green   #123B29  primary wax / header
+//   --sage-green  #1B6B45  existing brand green, used for the user bubble
+//   --gold        #C9A227  new — the seal ring, hairlines, small caps labels
+//   --parchment   #F6EFDD  panel background
+//   --parchment-2 #FFFDF7  card / reply background
+//   --border-warm #D9CBA0  hairline borders on parchment
+//   --ink         #221F1A  primary text
+//   --ink-faded   #8A8578  secondary text
 
 import { useEffect, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { Sparkles, X, ArrowUp, Loader2 } from "lucide-react";
+import { Feather, X, Send, Loader2 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { chatWithAI, getChatHistory } from "@/lib/ai";
 import { useNotesRefresh } from "@/lib/note-refresh-context";
@@ -58,6 +56,28 @@ const assistantDevelop: Variants = {
   hidden: { opacity: 0, filter: "blur(4px)", y: 4 },
   show: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
+
+// A small engraved flourish used in the header rule and the empty state —
+// the kind of scrollwork you'd find under a letterhead, drawn as line art
+// so it reads as an ornament rather than an icon.
+function Flourish({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 120 16"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2 8C14 2 22 2 30 8C38 14 46 14 54 8C58 5 62 5 60 8C58 11 56 8 60 8C64 8 68 5 66 8C64 11 68 11 66 8C90 2 98 2 110 8"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      <circle cx="60" cy="8" r="2.2" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function AssistantLauncher() {
   const { isLoaded: userLoaded } = useUser();
@@ -151,37 +171,53 @@ export default function AssistantLauncher() {
             initial="hidden"
             animate="show"
             exit="exit"
-            style={{ transformOrigin: "bottom right" }}
-            className="fixed bottom-24 right-6 z-50 flex h-[70vh] max-h-[560px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-[#E4DFD3] bg-[#FBFAF6] shadow-2xl"
+            style={{
+              transformOrigin: "bottom right",
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(201,162,39,0.14) 1px, transparent 0)",
+              backgroundSize: "14px 14px",
+            }}
+            className="fixed bottom-24 right-6 z-50 flex h-[70vh] max-h-[560px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-[#D9CBA0] bg-[#F6EFDD] shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#E4DFD3] bg-white px-4 py-3">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#1B6B45] text-white">
-                  <Sparkles size={14} strokeWidth={2.5} />
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#4ADE80]" />
-                </span>
-                <div>
-                  <p className="font-serif text-[15px] leading-none text-[#221F1A]">Onyx</p>
-                  <p className="mt-1 text-[11px] leading-none text-[#8A8578]">
-                    Create, find, and edit notes
-                  </p>
+            <div className="relative flex flex-col border-b border-[#C9A227]/50 bg-gradient-to-r from-[#0F3423] to-[#1B6B45] px-4 pb-3 pt-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  {/* Wax seal mark */}
+                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123B29] text-[#E9CE7B] shadow-[0_0_0_2px_#0F3423,0_0_0_3px_#C9A227,0_3px_6px_rgba(0,0,0,0.35)]">
+                    <Feather size={15} strokeWidth={2} />
+                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0F3423] bg-[#7FBF63]" />
+                  </span>
+                  <div>
+                    <p className="font-serif text-[17px] italic leading-none text-[#F6EFDD]">
+                      Onyx
+                    </p>
+                    <p className="mt-1 text-[10px] uppercase leading-none tracking-[0.14em] text-[#C9A227]">
+                      Create &middot; Find &middot; Edit notes
+                    </p>
+                  </div>
                 </div>
+                <motion.button
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
+                  whileTap={{ scale: 0.9 }}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#C9A227] transition-colors hover:bg-white/10 hover:text-[#F6EFDD]"
+                >
+                  <X size={15} />
+                </motion.button>
               </div>
-              <motion.button
-                onClick={() => setOpen(false)}
-                aria-label="Close"
-                whileTap={{ scale: 0.9 }}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A8578] transition-colors hover:bg-[#EFEBE0] hover:text-[#221F1A]"
-              >
-                <X size={15} />
-              </motion.button>
+              <Flourish className="mt-2.5 h-2.5 w-full text-[#C9A227]/40" />
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            <div
+              ref={scrollRef}
+              className="relative flex-1 space-y-3 overflow-y-auto px-4 py-4"
+            >
               {historyLoading && (
-                <p className="text-center text-xs text-[#B3AC9C]">Loading conversation…</p>
+                <p className="text-center text-xs italic text-[#9A9280]">
+                  Unfolding your last letter…
+                </p>
               )}
 
               {!historyLoading && messages.length === 0 && (
@@ -189,16 +225,15 @@ export default function AssistantLauncher() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="flex h-full flex-col items-center justify-center px-4 text-center"
+                  className="flex h-full flex-col items-center justify-center px-5 text-center"
                 >
-                  <motion.span
-                    animate={reduceMotion ? undefined : { y: [0, -3, 0] }}
-                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <Sparkles size={20} className="mb-2 text-[#1B6B45]" />
-                  </motion.span>
-                  <p className="text-sm text-[#5C5749]">
-                    Try &quot;create a note called Grocery list&quot; or &quot;find my notes about routines&quot;.
+                  <Flourish className="mb-3 h-3 w-24 text-[#C9A227]" />
+                  <p className="font-serif text-[15px] italic leading-snug text-[#5C5749]">
+                    &ldquo;Create a note called Grocery list,&rdquo; or &ldquo;find my
+                    notes about routines.&rdquo;
+                  </p>
+                  <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-[#B3AC9C]">
+                    Onyx is listening
                   </p>
                 </motion.div>
               )}
@@ -211,7 +246,7 @@ export default function AssistantLauncher() {
                       variants={messageVariants}
                       initial="hidden"
                       animate="show"
-                      className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-[#1B6B45] px-3.5 py-2 text-[13.5px] leading-relaxed text-white"
+                      className="ml-auto max-w-[85%] rounded-lg rounded-br-sm border border-[#0F3423] bg-[#123B29] px-3.5 py-2 text-[13.5px] leading-relaxed text-[#F6EFDD] shadow-sm"
                     >
                       {m.content}
                     </motion.div>
@@ -223,14 +258,14 @@ export default function AssistantLauncher() {
                       animate="show"
                       className="mr-auto flex max-w-[85%] items-start gap-2"
                     >
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E7F1EA] text-[#1B6B45]">
-                        <Sparkles size={10} strokeWidth={2.5} />
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#123B29] text-[#C9A227] shadow-[0_0_0_1.5px_#F6EFDD,0_0_0_2.5px_#C9A227]">
+                        <Feather size={9} strokeWidth={2.25} />
                       </span>
                       <motion.div
                         variants={assistantDevelop}
                         initial="hidden"
                         animate="show"
-                        className="whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-[#E4DFD3] bg-white px-3.5 py-2 text-[13.5px] leading-relaxed text-[#3E3A32]"
+                        className="whitespace-pre-wrap rounded-lg rounded-bl-sm border border-[#D9CBA0] bg-[#FFFDF7] px-3.5 py-2 font-serif text-[13.5px] leading-relaxed text-[#3E3A32] shadow-sm"
                       >
                         {m.content}
                       </motion.div>
@@ -246,14 +281,14 @@ export default function AssistantLauncher() {
                   exit={{ opacity: 0 }}
                   className="mr-auto flex max-w-[85%] items-center gap-2"
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E7F1EA] text-[#1B6B45]">
-                    <Sparkles size={10} strokeWidth={2.5} />
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#123B29] text-[#C9A227] shadow-[0_0_0_1.5px_#F6EFDD,0_0_0_2.5px_#C9A227]">
+                    <Feather size={9} strokeWidth={2.25} />
                   </span>
-                  <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-[#E4DFD3] bg-white px-3.5 py-2.5">
+                  <div className="flex items-center gap-1 rounded-lg rounded-bl-sm border border-[#D9CBA0] bg-[#FFFDF7] px-3.5 py-2.5">
                     {[0, 1, 2].map((i) => (
                       <motion.span
                         key={i}
-                        className="h-1.5 w-1.5 rounded-full bg-[#1B6B45]"
+                        className="h-1.5 w-1.5 rounded-full bg-[#C9A227]"
                         animate={reduceMotion ? undefined : { opacity: [0.25, 1, 0.25] }}
                         transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18, ease: "easeInOut" }}
                       />
@@ -261,18 +296,18 @@ export default function AssistantLauncher() {
                   </div>
                 </motion.div>
               )}
-              {error && <p className="text-xs text-red-600">{error}</p>}
+              {error && <p className="text-xs text-red-700">{error}</p>}
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSend} className="border-t border-[#E4DFD3] bg-white p-3">
-              <div className="flex items-center gap-2 rounded-full border border-[#E4DFD3] bg-[#FBFAF6] px-3.5 py-2 transition focus-within:border-[#1B6B45] focus-within:ring-2 focus-within:ring-[#1B6B45]/15">
+            <form onSubmit={handleSend} className="border-t border-[#D9CBA0] bg-[#FFFDF7] p-3">
+              <div className="flex items-center gap-2 rounded-full border border-[#D9CBA0] bg-[#F6EFDD] px-3.5 py-2 transition focus-within:border-[#C9A227] focus-within:ring-2 focus-within:ring-[#C9A227]/20">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask Onyx…"
-                  className="flex-1 bg-transparent text-[13.5px] text-[#221F1A] outline-none placeholder:text-[#B3AC9C]"
+                  placeholder="Write to Onyx…"
+                  className="flex-1 bg-transparent font-serif text-[13.5px] italic text-[#221F1A] outline-none placeholder:text-[#B3AC9C]"
                   disabled={loading}
                 />
                 <motion.button
@@ -280,7 +315,7 @@ export default function AssistantLauncher() {
                   disabled={loading || !input.trim()}
                   aria-label="Send"
                   whileTap={{ scale: 0.88 }}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1B6B45] text-white transition disabled:opacity-30"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#123B29] text-[#E9CE7B] shadow-[0_0_0_1.5px_#F6EFDD,0_0_0_2.5px_#C9A227] transition disabled:opacity-30"
                 >
                   <AnimatePresence mode="wait" initial={false}>
                     {loading ? (
@@ -304,7 +339,7 @@ export default function AssistantLauncher() {
                         exit={{ opacity: 0, y: -3 }}
                         transition={{ duration: 0.12 }}
                       >
-                        <ArrowUp size={14} strokeWidth={2.5} />
+                        <Send size={12} strokeWidth={2.5} />
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -315,20 +350,20 @@ export default function AssistantLauncher() {
         )}
       </AnimatePresence>
 
-      {/* Bubble */}
+      {/* Bubble — a wax seal pressed into the corner of the page */}
       <motion.button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close assistant" : "Open assistant"}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#1B6B45] text-white shadow-lg"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#123B29] text-[#E9CE7B] shadow-[0_0_0_2px_#0F3423,0_0_0_4px_#C9A227,0_10px_24px_rgba(0,0,0,0.35)]"
       >
-        {/* Resting "breathe" ring — only while closed, so the bubble doesn't
+        {/* Resting "breathe" ring — only while closed, so the seal doesn't
             look inert when there's nothing else drawing the eye to it. */}
         {!open && !reduceMotion && (
           <motion.span
-            className="absolute inset-0 rounded-full bg-[#1B6B45]"
-            animate={{ scale: [1, 1.35, 1], opacity: [0.5, 0, 0.5] }}
+            className="absolute inset-0 rounded-full bg-[#C9A227]"
+            animate={{ scale: [1, 1.35, 1], opacity: [0.45, 0, 0.45] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
           />
         )}
@@ -341,7 +376,7 @@ export default function AssistantLauncher() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="relative"
           >
-            {open ? <X size={20} /> : <Sparkles size={20} strokeWidth={2.25} />}
+            {open ? <X size={20} /> : <Feather size={19} strokeWidth={2} />}
           </motion.span>
         </AnimatePresence>
       </motion.button>

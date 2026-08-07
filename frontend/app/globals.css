@@ -39,13 +39,13 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
+  /* --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-4xl: calc(var(--radius) * 2.6); */
 }
 
 /* ==========================================================================
@@ -98,7 +98,14 @@
   --background: var(--paper);
   --foreground: var(--ink);
 }
+.noScrollbar {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* old Edge / IE */
+}
 
+.noScrollbar::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, new Edge */
+}
 html, body {
   margin: 0;
   padding: 0;
@@ -157,8 +164,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 22px;
-  background: var(--pine-deep);
+  padding: 16px 25px;
+  background: var(--pine);
   color: #EFE9D8;
   border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   gap: 16px;
@@ -191,7 +198,6 @@ html, body {
   font-family: 'Fraunces', serif;
   font-style: italic;
   font-weight: 600;
-  font-size: 15.5px;
 }
 
 .nav-search {
@@ -257,8 +263,8 @@ html, body {
 }
 
 .avatar {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--brass-soft);
   color: var(--pine-deep);
@@ -330,7 +336,7 @@ html, body {
    SIDEBAR
    ========================================================================== */
 
-.sidebar {
+/* .sidebar {
   background: var(--sidebar-bg);
   border-right: 1px solid var(--rule);
   display: flex;
@@ -338,7 +344,7 @@ html, body {
   height: 100%;
   padding: 0;
   overflow: hidden;
-}
+} */
 
 .sb-scroll {
   flex: 1;
@@ -484,124 +490,13 @@ html, body {
    NOTES GRID + CARDS
    ========================================================================== */
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  position: relative;
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: 3px 3px 10px 10px;
-  padding: 18px 16px 14px;
-  position: relative;
-  min-height: 130px;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  animation: card-arrive 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
-.card:nth-child(1) { animation-delay: 0.02s; }
-.card:nth-child(2) { animation-delay: 0.08s; }
-.card:nth-child(3) { animation-delay: 0.14s; }
-.card:nth-child(4) { animation-delay: 0.20s; }
-.card:nth-child(5) { animation-delay: 0.26s; }
-.card:nth-child(6) { animation-delay: 0.32s; }
-.card:nth-child(n+7) { animation-delay: 0.36s; }
-
-@keyframes card-arrive {
-  from { opacity: 0; transform: translateY(10px) rotate(-0.5deg); }
-  to   { opacity: 1; transform: translateY(0) rotate(0deg); }
-}
-
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 12px;
-  right: 12px;
-  height: 1px;
-  background-image: linear-gradient(to right, var(--rule) 60%, transparent 0%);
-  background-size: 7px 1px;
-  background-repeat: repeat-x;
-}
-
-/* .card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 14px 14px 0;
-  border-color: transparent var(--paper) transparent transparent;
-} */
-
-
-.card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 14px 14px 0;
-  border-color: transparent var(--paper) transparent transparent;
-  transition: border-width 0.25s ease, filter 0.25s ease;
-  transform-origin: top right;
-  filter: drop-shadow(-1px 1px 1px rgba(43, 38, 32, 0.12));
-}
-
-.card:hover::after {
-  border-width: 0 20px 20px 0;
-  filter: drop-shadow(-2px 2px 2px rgba(43, 38, 32, 0.2));
-}
-
-.card:hover {
-  cursor: pointer;
-  transform: translateY(-3px) rotate(-0.4deg);
-  box-shadow: var(--shadow-hover);
-}
-
-.card h3 {
-  font-size: 16px;
-  color: var(--ink);
-  font-style: italic;
-  font-weight: 600;
-  font-family: 'Fraunces', serif;
-  padding-right: 12px;
-}
-
-.card .preview {
-  color: var(--ink-soft);
-  font-size: 12.5px;
-  margin-top: 6px;
-  line-height: 1.5;
-  flex: 1;
-}
-
-.card .meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--rule);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  color: var(--stamp);
-}
 
 /* ---- Wax seal badge ---- */
 .stamp-badge {
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
   width: 28px;
   height: 28px;
   border-radius: 50%;

@@ -5,16 +5,24 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { useSidebar } from "@/lib/sidebar-context";
 import { useSearch } from "@/lib/search-context";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import gsap from "gsap";
+import logo from "@/public/assets/wax-seal.png";
+import styles from "@/app/notes/_components/Notes.module.css";
+
+const BRAND = "Mémoire";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const brandRef = useRef<HTMLDivElement>(null);
 
   const { toggle } = useSidebar();
   const { query, setQuery } = useSearch();
   const { user } = useUser();
-  const { signOut, openUserProfile } = useClerk();
+  const { signOut } = useClerk();
   const router = useRouter();
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -25,9 +33,35 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Split-text reveal for the wordmark, runs each time the navbar mounts
+  // (i.e. on page load / route entry).
+  useEffect(() => {
+    if (!brandRef.current) return;
+    const letters = brandRef.current.querySelectorAll(`.${styles.letter}`);
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        letters,
+        { yPercent: 110, opacity: 0, rotateZ: 6 },
+        {
+          yPercent: 0,
+          opacity: 1,
+          rotateZ: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          stagger: 0.045,
+          delay: 0.15,
+        },
+      );
+    }, brandRef);
+
+    return () => ctx.revert();
+  }, []);
+
   const handleLogout = () => signOut({ redirectUrl: "/" });
   const initial = user?.firstName?.[0] ?? user?.username?.[0] ?? "U";
   const [searchFocused, setSearchFocused] = useState(false);
+
   return (
     <div className="navbar">
       <div className="nav-left">
@@ -39,8 +73,17 @@ const Navbar = () => {
         >
           ☰
         </button>
-        <div className="nav-mark">M</div>
-        <div className="nav-brand">Mémoire</div>
+        <Image src={logo} alt="Mémoire" width={40} height={40} />
+
+        <div className={styles.brandWrap} ref={brandRef} aria-label={BRAND}>
+          {BRAND.split("").map((char, i) => (
+            <span key={i} className={styles.letterMask}>
+              <span className={styles.letter}>
+                {char === " " ? "\u00A0" : char}
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="nav-search-wrap">
@@ -69,8 +112,8 @@ const Navbar = () => {
             onClick={() => setOpen((o) => !o)}
             aria-label="Account menu"
           >
-            {user?.imageUrl ? (
-              <img
+            {user?.hasImage ? (
+              <Image
                 src={user.imageUrl}
                 alt={user.fullName ?? "Account"}
                 className="avatar avatar-img"
@@ -88,7 +131,6 @@ const Navbar = () => {
                   {user?.primaryEmailAddress?.emailAddress ?? ""}
                 </div>
               </div>
-
               <div
                 className="d-item"
                 onClick={() => {
@@ -98,7 +140,6 @@ const Navbar = () => {
               >
                 👤 Profile
               </div>
-
               <div
                 className="d-item"
                 onClick={() => {
@@ -108,9 +149,7 @@ const Navbar = () => {
               >
                 ⚙ Settings
               </div>
-
               <hr />
-
               <div
                 className="d-item danger"
                 onClick={() => {

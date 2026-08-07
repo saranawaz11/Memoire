@@ -1,14 +1,31 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { NotesRefreshProvider } from "@/lib/note-refresh-context";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar-context";
 import { SearchProvider } from "@/lib/search-context";
-import Sidebar from "../_components/Sidebar";
-import AssistantLauncher from "../components/AssistantLauncher";
-import Navbar from "../_components/Navbar";
+import Sidebar from "@/app/notes/_components/Sidebar";
+import AssistantLauncher from "@/app/notes/_components/AssistantLauncher";
+import Navbar from "@/app/notes/_components/Navbar";
+
+// Matches /notes/<id> but not /notes itself and not /notes/form
+function useIsFocusedNote() {
+  const pathname = usePathname();
+  return /^\/notes\/[^/]+$/.test(pathname) && pathname !== "/notes/form";
+}
 
 function LayoutInner({ children }: { children: React.ReactNode }) {
   const { isOpen, close } = useSidebar();
+  const isFocusedNote = useIsFocusedNote();
+
+  if (isFocusedNote) {
+    // No navbar, no sidebar, no assistant launcher — just the page.
+    return (
+      <NotesRefreshProvider>
+        <main className="h-full w-full overflow-y-auto no-scrollbar">{children}</main>
+      </NotesRefreshProvider>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -19,7 +36,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
           <Sidebar />
         </aside>
         <NotesRefreshProvider>
-          <main className="h-full flex-1 min-w-0 overflow-y-auto">
+          <main className="h-full flex-1 min-w-0 overflow-y-auto no-scrollbar">
             {children}
           </main>
           <AssistantLauncher />

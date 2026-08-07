@@ -6,16 +6,17 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ConfirmModal } from './modals/ConfirmModal'
 import { apiFetch } from '@/lib/api'
-
+import styles from '@/app/notes/[id]/NoteDetail.module.css'
 type Props = {
     id: number
     endpoint: string
     redirectTo?: string
     onSuccess?: () => void
     className?: string
+    text?:string
 }
 
-export default function DeleteButton({ id, endpoint, redirectTo = '/notes', onSuccess, className }: Props) {
+export default function DeleteButton({ id, endpoint, redirectTo = '/notes', onSuccess, className, text }: Props) {
     const router = useRouter()
     // CHANGED: pull getToken alongside userId
     const { userId, getToken } = useAuth()
@@ -52,10 +53,11 @@ export default function DeleteButton({ id, endpoint, redirectTo = '/notes', onSu
     return (
         <ConfirmModal onConfirm={handleDelete}>
             <button
-                className={className ?? 'p-2 rounded-xl text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors'}
+                className={styles.deleteBtn}
                 title="Delete"
             >
-                <Trash2 size={16} />
+                {text || ''}
+                <Trash2 size={12} />
             </button>
         </ConfirmModal>
     )
